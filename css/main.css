@@ -1,0 +1,21 @@
+/* Основные стили квеста */
+:root {
+  --primary-color: #c41e3a;
+  --secondary-color: #228b22;
+  --background-color: #0a1929;
+  --text-color: #ffffff;
+  --card-background: #1a2744;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  min-height: 100vh;
+}

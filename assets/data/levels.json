@@ -1,0 +1,14 @@
+{
+  "levels": [
+    {"id": 1, "name": "Охота за сокровищами", "slug": "treasure", "icon": "🔍", "difficulty": 1, "status": "available"},
+    {"id": 2, "name": "Биржевой магнат", "slug": "stocks", "icon": "📈", "difficulty": 2, "status": "locked"},
+    {"id": 3, "name": "Ландшафтный дизайнер", "slug": "garden", "icon": "🌱", "difficulty": 2, "status": "locked"},
+    {"id": 4, "name": "Криптограф", "slug": "crypto", "icon": "🔐", "difficulty": 2, "status": "locked"},
+    {"id": 5, "name": "3D Лабиринт", "slug": "maze", "icon": "🧩", "difficulty": 2, "status": "locked"},
+    {"id": 6, "name": "GeoGuessr", "slug": "geoguessr", "icon": "🌍", "difficulty": 3, "status": "locked"},
+    {"id": 7, "name": "Рыбалка", "slug": "fishing", "icon": "🎣", "difficulty": 2, "status": "locked"},
+    {"id": 8, "name": "Кухня", "slug": "kitchen", "icon": "🍳", "difficulty": 3, "status": "locked"},
+    {"id": 9, "name": "Викторина", "slug": "quiz", "icon": "❓", "difficulty": 1, "status": "locked"},
+    {"id": 10, "name": "Детектив", "slug": "detective", "icon": "🕵️", "difficulty": 1, "status": "locked"}
+  ]
+}

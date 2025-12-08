@@ -263,7 +263,7 @@
         const levelsGrid = document.getElementById('levels-grid');
         data.levels.forEach(level => {
           const card = document.createElement('a');
-          card.href = level.status === 'available' ? `levels/level${level.id}-${level.name.toLowerCase().replace(/\s+/g, '-')}.html` : '#';
+          card.href = level.status === 'available' ? `levels/level${level.id}-${level.slug}.html` : '#';
           card.className = `level-card ${level.status}`;
           
           const stars = '⭐'.repeat(level.difficulty);

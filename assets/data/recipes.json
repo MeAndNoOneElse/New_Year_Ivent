@@ -1,0 +1,7 @@
+{
+  "recipes": [
+    {"id": 1, "name": "Бабушкины блины", "difficulty": 1, "steps": []},
+    {"id": 2, "name": "Борщ", "difficulty": 2, "steps": []},
+    {"id": 3, "name": "Пицца", "difficulty": 2, "steps": []}
+  ]
+}

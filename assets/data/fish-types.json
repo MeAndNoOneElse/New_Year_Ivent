@@ -1,0 +1,10 @@
+{
+  "fish": [
+    {"id": 1, "name": "Карась", "emoji": "🐟", "points": 10, "rarity": "common"},
+    {"id": 2, "name": "Окунь", "emoji": "🐠", "points": 20, "rarity": "common"},
+    {"id": 3, "name": "Сом", "emoji": "🐡", "points": 50, "rarity": "rare"},
+    {"id": 4, "name": "Щука", "emoji": "🦈", "points": 100, "rarity": "rare"},
+    {"id": 5, "name": "Осьминог", "emoji": "🐙", "points": 200, "rarity": "epic"},
+    {"id": 6, "name": "Золотая рыбка", "emoji": "✨", "points": 500, "rarity": "legendary"}
+  ]
+}

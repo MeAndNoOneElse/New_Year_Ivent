@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎄 Семейный Новогодний Квест 2025</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/themes/new-year.css">
+  <style>
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      padding: 40px 20px;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      margin-bottom: 40px;
+      border-radius: 10px;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    header p {
+      font-size: 1.2rem;
+      opacity: 0.9;
+    }
+
+    .section {
+      background: var(--card-background);
+      padding: 30px;
+      margin-bottom: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .section h2 {
+      margin-bottom: 20px;
+      color: var(--primary-color);
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 10px;
+    }
+
+    /* Управление игроками */
+    .player-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .player-controls input {
+      flex: 1;
+      padding: 12px;
+      background: var(--background-color);
+      border: 2px solid var(--primary-color);
+      color: var(--text-color);
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+
+    .player-controls button {
+      padding: 12px 24px;
+      background: var(--primary-color);
+      border: none;
+      color: var(--text-color);
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+
+    .player-controls button:hover {
+      background: #a01729;
+      transform: translateY(-2px);
+    }
+
+    #player-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .player-tag {
+      background: var(--secondary-color);
+      padding: 8px 16px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .player-tag button {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: var(--text-color);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .player-tag button:hover {
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Таблица лидеров */
+    .leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .leaderboard-table th,
+    .leaderboard-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .leaderboard-table th {
+      background: var(--primary-color);
+      font-weight: bold;
+    }
+
+    .leaderboard-table tr:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Сетка уровней */
+    .levels-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .level-card {
+      background: var(--background-color);
+      border: 2px solid var(--primary-color);
+      border-radius: 10px;
+      padding: 20px;
+      text-decoration: none;
+      color: var(--text-color);
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .level-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(196, 30, 58, 0.3);
+      animation: glow 2s infinite;
+    }
+
+    .level-card.locked {
+      opacity: 0.5;
+      cursor: not-allowed;
+      border-color: #666;
+    }
+
+    .level-card.locked:hover {
+      transform: none;
+      animation: none;
+    }
+
+    .level-icon {
+      font-size: 3rem;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .level-name {
+      font-size: 1.2rem;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .level-difficulty {
+      text-align: center;
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+
+    .level-status {
+      text-align: center;
+      font-size: 0.9rem;
+      opacity: 0.7;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      margin-top: 40px;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎄 Семейный Квест 2025 🎄</h1>
+      <p>Интерактивный новогодний квест для всей семьи!</p>
+    </header>
+
+    <!-- Управление игроками -->
+    <section class="section">
+      <h2>👥 Игроки</h2>
+      <div class="player-controls">
+        <input type="text" id="player-name-input" placeholder="Введите имя игрока..." />
+        <button id="add-player-btn">Добавить игрока</button>
+      </div>
+      <div id="player-list"></div>
+    </section>
+
+    <!-- Таблица лидеров -->
+    <section class="section">
+      <h2>🏆 Таблица лидеров</h2>
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>Место</th>
+            <th>Игрок</th>
+            <th>Очки</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-body">
+          <tr>
+            <td colspan="3" style="text-align: center; opacity: 0.5;">Добавьте игроков, чтобы начать</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Уровни -->
+    <section class="section">
+      <h2>🎮 Уровни</h2>
+      <div class="levels-grid" id="levels-grid"></div>
+    </section>
+
+    <footer>
+      <p>Семейный проект для новогодних праздников 2025! 🎅</p>
+    </footer>
+  </div>
+
+  <script src="js/core/storage.js"></script>
+  <script src="js/core/players.js"></script>
+  <script src="js/core/leaderboard.js"></script>
+  <script src="js/core/app.js"></script>
+  <script>
+    // Загрузка данных уровней
+    fetch('assets/data/levels.json')
+      .then(response => response.json())
+      .then(data => {
+        const levelsGrid = document.getElementById('levels-grid');
+        data.levels.forEach(level => {
+          const card = document.createElement('a');
+          card.href = level.status === 'available' ? `levels/level${level.id}-${level.name.toLowerCase().replace(/\s+/g, '-')}.html` : '#';
+          card.className = `level-card ${level.status}`;
+          
+          const stars = '⭐'.repeat(level.difficulty);
+          
+          card.innerHTML = `
+            <div class="level-icon">${level.icon}</div>
+            <div class="level-name">${level.name}</div>
+            <div class="level-difficulty">${stars}</div>
+            <div class="level-status">${level.status === 'available' ? 'Доступен' : 'Заблокирован'}</div>
+          `;
+          
+          if (level.status === 'locked') {
+            card.addEventListener('click', (e) => e.preventDefault());
+          }
+          
+          levelsGrid.appendChild(card);
+        });
+      })
+      .catch(error => console.error('Ошибка загрузки уровней:', error));
+
+    // Управление игроками
+    const playerNameInput = document.getElementById('player-name-input');
+    const addPlayerBtn = document.getElementById('add-player-btn');
+    const playerList = document.getElementById('player-list');
+
+    function renderPlayers() {
+      playerList.innerHTML = '';
+      Players.list.forEach(player => {
+        const tag = document.createElement('div');
+        tag.className = 'player-tag';
+        tag.innerHTML = `
+          <span>${player.name}</span>
+          <button onclick="removePlayer('${player.name}')">×</button>
+        `;
+        playerList.appendChild(tag);
+      });
+      Leaderboard.render();
+    }
+
+    function removePlayer(name) {
+      Players.remove(name);
+      renderPlayers();
+    }
+
+    addPlayerBtn.addEventListener('click', () => {
+      const name = playerNameInput.value.trim();
+      if (name) {
+        Players.add(name);
+        playerNameInput.value = '';
+        renderPlayers();
+      }
+    });
+
+    playerNameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        addPlayerBtn.click();
+      }
+    });
+
+    // Обновленная таблица лидеров
+    Leaderboard.render = function() {
+      const leaderboardBody = document.getElementById('leaderboard-body');
+      const players = Players.list.sort((a, b) => b.score - a.score);
+      
+      if (players.length === 0) {
+        leaderboardBody.innerHTML = '<tr><td colspan="3" style="text-align: center; opacity: 0.5;">Добавьте игроков, чтобы начать</td></tr>';
+        return;
+      }
+      
+      leaderboardBody.innerHTML = players.map((player, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${player.name}</td>
+          <td>${player.score}</td>
+        </tr>
+      `).join('');
+    };
+
+    // Инициализация при загрузке
+    renderPlayers();
+  </script>
+</body>
+</html>

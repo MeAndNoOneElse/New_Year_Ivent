@@ -256,30 +256,81 @@
   <script src="js/core/leaderboard.js"></script>
   <script src="js/core/app.js"></script>
   <script>
-    // Загрузка данных уровней
+    // Загрузка данных уровней + поддержка разблокировки через код из localStorage
     fetch('assets/data/levels.json')
       .then(response => response.json())
       .then(data => {
         const levelsGrid = document.getElementById('levels-grid');
+        const unlocked = Storage.load('unlocked_levels') || []; // [1,2,...]
+
         data.levels.forEach(level => {
-          const card = document.createElement('a');
-          card.href = level.status === 'available' ? `levels/level${level.id}-${level.slug}.html` : '#';
-          card.className = `level-card ${level.status}`;
-          
+          // treat as available if in unlocked list
+          const isUnlocked = unlocked.includes(level.id);
+          const status = level.status === 'available' || isUnlocked ? 'available' : 'locked';
+
+          const card = document.createElement('div');
+          card.className = `level-card ${status}`;
+
           const stars = '⭐'.repeat(level.difficulty);
           
           card.innerHTML = `
             <div class="level-icon">${level.icon}</div>
             <div class="level-name">${level.name}</div>
             <div class="level-difficulty">${stars}</div>
-            <div class="level-status">${level.status === 'available' ? 'Доступен' : 'Заблокирован'}</div>
+            <div class="level-status">${status === 'available' ? 'Доступен' : 'Заблокирован'}</div>
           `;
           
-          if (level.status === 'locked') {
-            card.addEventListener('click', (e) => e.preventDefault());
+          // если доступен — делаем ссылку
+          if (status === 'available') {
+            const anchor = document.createElement('a');
+            anchor.href = `levels/level${level.id}-${level.slug}.html`;
+            anchor.style.textDecoration = 'none';
+            anchor.style.color = 'inherit';
+            anchor.appendChild(card);
+            levelsGrid.appendChild(anchor);
+          } else {
+            // для заблокированных карточек добавляем поле ввода кода и кнопку
+            const controls = document.createElement('div');
+            controls.style.marginTop = '12px';
+            controls.innerHTML = `
+              <input type="text" placeholder="Введите код предыдущего уровня" class="level-unlock-input" data-level-id="${level.id}" style="width:70%; padding:8px; border-radius:6px; border:1px solid #ccc;" />
+              <button class="level-unlock-btn" data-level-id="${level.id}" style="margin-left:8px; padding:8px 10px; border-radius:6px; background:#8b1f2d; color:#fff; border:none;">Разблокировать</button>
+              <div class="unlock-msg" style="margin-top:8px; font-size:0.9rem; opacity:0.8;"></div>
+            `;
+            card.appendChild(controls);
+            levelsGrid.appendChild(card);
           }
-          
-          levelsGrid.appendChild(card);
+        });
+
+        // обработка попыток разблокировать
+        document.querySelectorAll('.level-unlock-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const id = Number(e.currentTarget.dataset.levelId);
+            const input = document.querySelector(`.level-unlock-input[data-level-id="${id}"]`);
+            const val = input.value.trim().toUpperCase();
+            const msg = e.currentTarget.parentElement.querySelector('.unlock-msg');
+            const storedCodes = Storage.load('level_codes') || {}; // {1: "ABC", ...}
+            // previous level code must match any stored code value (for simplicity check storedCodes)
+            // expected: previous level id = id-1
+            const expected = storedCodes[id - 1];
+            if (!expected) {
+              msg.textContent = 'Код для предыдущего уровня не найден. Сначала завершите предыдущий уровень.';
+              return;
+            }
+            if (val === expected.toUpperCase()) {
+              // пометить уровень как разблокированный
+              const unlocked = Storage.load('unlocked_levels') || [];
+              if (!unlocked.includes(id)) {
+                unlocked.push(id);
+                Storage.save('unlocked_levels', unlocked);
+              }
+              msg.textContent = 'Уровень разблокирован! Обновите страницу.';
+              msg.style.color = 'limegreen';
+            } else {
+              msg.textContent = 'Неверный код.';
+              msg.style.color = '#ffdddd';
+            }
+          });
         });
       })
       .catch(error => console.error('Ошибка загрузки уровней:', error));

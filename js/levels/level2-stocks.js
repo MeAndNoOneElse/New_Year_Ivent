@@ -1,588 +1,489 @@
-// Уровень 2: Биржевой магнат
 const Level2 = {
-  // Конфиг / состояние
+  keyPrefix: 'level2_pool_',
+  pool: null, // { id, players: [{name,balance}], pickedScenarios:[], currentIndex, history:[] }
+  chart: null,
   totalRounds: 5,
-  scenariosPoolSize: 20,
-  scenarioLength: 60, // точек графика
-  state: null, // runtime state
-
   init() {
-    // привязки UI
-    this.cacheDOM();
-    this.bindEvents();
-    this.loadSavedSessionsList();
-    this.prepareScenarios(); // сгенерировать 20 сценариев
-    this.showStartModalIfNeeded();
-    console.log('Level2 инициализирован');
-  },
-
-  cacheDOM() {
+    // DOM refs
     this.startModal = document.getElementById('startModal');
+    this.closeStartBtn = document.getElementById('close-start');
     this.playersExistingEl = document.getElementById('players-existing');
-    this.savedSessionsEl = document.getElementById('saved-sessions');
-    this.btnStart = document.getElementById('btn-start-game');
     this.btnAddPlayer = document.getElementById('btn-add-player');
-    this.newPlayerName = document.getElementById('new-player-name');
+    this.inputNewPlayer = document.getElementById('new-player-name');
+    this.btnStart = document.getElementById('btn-start-game');
     this.btnCancelStart = document.getElementById('btn-cancel-start');
-    this.btnSaveExit = document.getElementById('btn-save-exit');
-    this.btnNewPool = document.getElementById('btn-new-pool');
-    this.sessionList = document.getElementById('session-list');
-
+    this.savedSessionsEl = document.getElementById('saved-sessions');
     this.balancesEl = document.getElementById('balances');
     this.actionsWrapper = document.getElementById('actions-wrapper');
     this.scenarioTitle = document.getElementById('scenario-title');
     this.scenarioNews = document.getElementById('scenario-news');
     this.btnReveal = document.getElementById('btn-reveal');
     this.btnNext = document.getElementById('btn-next');
+    this.btnSaveExit = document.getElementById('btn-save-exit');
     this.roundInfo = document.getElementById('round-info');
-    this.chartCanvas = document.getElementById('stockChart');
-    this.finalSummary = document.getElementById('final-summary');
     this.summaryTable = document.getElementById('summary-table');
+    this.finalSummary = document.getElementById('final-summary');
     this.noSummary = document.getElementById('no-summary');
     this.btnFinishSave = document.getElementById('btn-finish-save');
-    this.btnBack = document.getElementById('btn-back');
+    this.btnNewPool = document.getElementById('btn-new-pool');
+    this.sessionListEl = document.getElementById('session-list');
+
+    // image element вместо Chart.js
+    this.imageEl = document.getElementById('scenarioImage');
+
+    // events
+    if (this.btnAddPlayer) this.btnAddPlayer.addEventListener('click', () => this.handleAddPlayer());
+    if (this.btnStart) this.btnStart.addEventListener('click', () => this.handleStart());
+    if (this.btnCancelStart) this.btnCancelStart.addEventListener('click', () => this.handleCancelStart());
+    if (this.btnReveal) this.btnReveal.addEventListener('click', () => this.handleReveal());
+    if (this.btnNext) this.btnNext.addEventListener('click', () => this.nextScenario());
+    if (this.btnSaveExit) this.btnSaveExit.addEventListener('click', () => this.saveAndExit());
+    if (this.btnFinishSave) this.btnFinishSave.addEventListener('click', () => this.finishAndSave());
+    if (this.btnNewPool) this.btnNewPool.addEventListener('click', () => this.openNewPoolModal());
+
+    // render existing players and sessions
+    this.renderExistingPlayers();
+    this.renderSavedSessions();
+    // show modal on load
+    this.showStartModalIfNeeded();
+      if (this.closeStartBtn) {
+          this.closeStartBtn.addEventListener('click', () => {
+              // поведение зависит от режима: 'info' — просто закрыть модал, 'initial' — уйти на главную
+              if (this.startModalMode === 'info') {
+                  if (this.hideStart) this.hideStart();
+              } else {
+                  // initial или по умолчанию — вернуть на главную
+                  if (this.hideStart) this.hideStart();
+                  window.location.href = "../index.html";
+              }
+          });
+      }
   },
 
-  bindEvents() {
-    this.btnStart && this.btnStart.addEventListener('click', () => this.onStartClicked());
-    this.btnAddPlayer && this.btnAddPlayer.addEventListener('click', () => this.onAddPlayer());
-    this.btnCancelStart && this.btnCancelStart.addEventListener('click', () => this.hideStartModal());
-    this.btnSaveExit && this.btnSaveExit.addEventListener('click', () => this.saveAndExit());
-    this.btnNewPool && this.btnNewPool.addEventListener('click', () => this.showStartModal());
-    this.btnReveal && this.btnReveal.addEventListener('click', () => this.onReveal());
-    this.btnNext && this.btnNext.addEventListener('click', () => this.nextRound());
-    this.btnFinishSave && this.btnFinishSave.addEventListener('click', () => this.finishAndSave());
-    this.btnBack && this.btnBack.addEventListener('click', () => this.handleBack());
-    // global click prevents accidental select etc.
+  // --- UI helpers ---
+  showStartModalIfNeeded() {
+    // if there's a saved active pool, offer continue; otherwise open modal
+    const lastPoolId = localStorage.getItem(this.keyPrefix + 'last');
+    if (lastPoolId) {
+      // show modal with continue option
+      this.startModal.classList.remove('hidden');
+    } else {
+      this.startModal.classList.remove('hidden');
+    }
   },
 
-  prepareScenarios() {
-    // Если определён внешний список LEVEL2_SCENARIOS и он не пуст — используем его.
-    if (typeof LEVEL2_SCENARIOS !== 'undefined' && Array.isArray(LEVEL2_SCENARIOS) && LEVEL2_SCENARIOS.length > 0) {
-      this.scenarios = LEVEL2_SCENARIOS.map((s, i) => {
-        // извлекаем ключи из внешнего объекта; допускаем несколько вариантов названий полей
-        const startPrice = +(s.startPrice ?? s.price ?? 100);
-        const endPrice = +(s.endPrice ?? s.end_price ?? startPrice + ((Math.random() - 0.5) * 20));
-        const startSeries = this.generateSeries(startPrice, 6, this.scenarioLength);
-        const endSeries = this.generateSeries(endPrice, 6, this.scenarioLength);
-        return {
-          id: s.id || ('sc' + (i+1)),
-          title: s.paper ? `${s.paper}` : (s.title || `Сценарий #${i+1}`),
-          news: s.news || '',
-          analysis: s.analysis || '',
-          startSeries,
-          endSeries,
-          startPrice: startSeries[startSeries.length-1],
-          endPrice: endSeries[endSeries.length-1],
-          startImage: s.startImage || s.startImg || null,
-          endImage: s.endImage || s.endImg || null,
-          minPrice: (typeof s.minPrice === 'number') ? s.minPrice : Math.min(startPrice, endPrice) - 5,
-          maxPrice: (typeof s.maxPrice === 'number') ? s.maxPrice : Math.max(startPrice, endPrice) + 5
-        };
-      });
+  renderExistingPlayers() {
+    if (!this.playersExistingEl) return;
+    this.playersExistingEl.innerHTML = '';
+    Players.init(); // ensure loaded
+    const list = Players.list || [];
+    list.forEach(p => {
+      const lbl = document.createElement('label');
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.value = p.name;
+      lbl.appendChild(chk);
+      lbl.appendChild(document.createTextNode(' ' + p.name));
+      this.playersExistingEl.appendChild(lbl);
+    });
+  },
+
+  renderSavedSessions() {
+    if (!this.savedSessionsEl) return;
+    this.savedSessionsEl.innerHTML = '';
+    // enumerate localStorage keys starting with prefix
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(this.keyPrefix)) {
+        try {
+          const pool = JSON.parse(localStorage.getItem(key));
+          const btn = document.createElement('button');
+          btn.className = 'btn secondary';
+          btn.textContent = `Продолжить пул ${pool.id} (раунд ${pool.currentIndex+1 || 1})`;
+          btn.addEventListener('click', () => this.loadPool(pool.id));
+          this.savedSessionsEl.appendChild(btn);
+        } catch (e) { /* ignore */ }
+      }
+    }
+  },
+
+  handleAddPlayer() {
+    const name = (this.inputNewPlayer && this.inputNewPlayer.value || '').trim();
+    if (!name) return;
+    Players.add(name);
+    this.inputNewPlayer.value = '';
+    this.renderExistingPlayers();
+  },
+
+  handleCancelStart() {
+    // when start modal is initial (first open) Cancel should go to main; here modal always closable
+    this.startModal.classList.add('hidden');
+    // if no active pool present, go back
+    const lastPoolId = localStorage.getItem(this.keyPrefix + 'last');
+    if (!lastPoolId) {
+      window.location.href = '../index.html';
+    }
+  },
+
+  handleStart() {
+    // collect selected players
+    const checks = Array.from(this.playersExistingEl.querySelectorAll('input[type=checkbox]:checked'));
+    const names = checks.map(c => c.value).filter(Boolean);
+    if (names.length === 0) {
+      alert('Выберите хотя бы одного игрока');
       return;
     }
-
-    // fallback: старая генерация случайных сценариев
-    this.scenarios = [];
-    for (let i = 0; i < this.scenariosPoolSize; i++) {
-      const startBase = 50 + Math.round(Math.random() * 100);
-      const delta = (Math.random() - 0.5) * 40; // изменения
-      const endBase = Math.max(1, Math.round(startBase + delta));
-      const startSeries = this.generateSeries(startBase, 6, this.scenarioLength);
-      const endSeries = this.generateSeries(endBase, 6, this.scenarioLength);
-      this.scenarios.push({
-        id: 'sc' + (i+1),
-        title: `Сценарий #${i+1}`,
-        news: ['Рынок волатилен','Позитивная новость','Негативный отчет','Глобальные события'][Math.floor(Math.random()*4)],
-        startSeries, endSeries,
-        startPrice: startSeries[startSeries.length-1],
-        endPrice: endSeries[endSeries.length-1]
-      });
-    }
+    // create pool object
+    const poolId = 'pool_' + Date.now();
+    const players = names.map(n => ({ name: n, balance: 100000, initialBalance: 100000 }));
+    this.pool = {
+      id: poolId,
+      players,
+      pickedScenarios: [],
+      currentIndex: 0,
+      history: []
+    };
+    // pick scenarios (5) from LEVEL2_SCENARIOS
+    this.pool.pickedScenarios = this.pickScenarios(this.totalRounds);
+    // save
+    localStorage.setItem(this.keyPrefix + poolId, JSON.stringify(this.pool));
+    localStorage.setItem(this.keyPrefix + 'last', poolId);
+    this.startModal.classList.add('hidden');
+    this.renderBalances();
+    this.renderScenario();
+    this.renderSavedSessions();
   },
 
-  generateSeries(base, vol, len) {
-    // простая генерация серий: шум вокруг base
+  loadPool(poolId) {
+    const raw = localStorage.getItem(this.keyPrefix + poolId);
+    if (!raw) { alert('Сессия не найдена'); return; }
+    this.pool = JSON.parse(raw);
+    // ensure balances exist
+    this.pool.players.forEach(p => { if (typeof p.balance !== 'number') p.balance = p.initialBalance || 100000; });
+    this.startModal.classList.add('hidden');
+    this.renderBalances();
+    this.renderScenario();
+    this.renderSavedSessions();
+  },
+
+  pickScenarios(n) {
+    const pool = (typeof LEVEL2_SCENARIOS !== 'undefined' ? LEVEL2_SCENARIOS.slice() : []);
+    // shuffle
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const chosen = pool.slice(0, n).map(s => {
+      // ensure series fields: if startSeries/endSeries not present, create simple arrays from startPrice/endPrice
+      const startSeries = s.startSeries || this.generateSeries(s.startPrice || s.price || 100, 30, 30);
+      const endSeries = s.endSeries || this.generateSeries(s.endPrice || s.end_price || (startSeries[startSeries.length-1] * (1 + ((Math.random()-0.5)/5))), 30, 30);
+      return Object.assign({}, s, { startSeries, endSeries });
+    });
+    return chosen;
+  },
+
+  // simple price series generator (not used if provided)
+  generateSeries(base, volatility = 6, len = 30) {
     const arr = [];
-    let val = base;
-    for (let i=0;i<len;i++){
-      val = Math.max(1, val + (Math.random()-0.5) * vol);
-      arr.push(+val.toFixed(2));
+    let p = base;
+    for (let i = 0; i < len; i++) {
+      p = Math.max(1, p + (Math.random() - 0.5) * volatility);
+      arr.push(Number(p.toFixed(2)));
     }
     return arr;
   },
 
-  showStartModalIfNeeded() {
-    // если есть сохранённая сессия — показать опцию продолжить, иначе показать modal
-    const last = Storage.load('level2_last_session');
-    this.renderPlayersList();
-    this.loadSavedSessionsList();
-    if (last) {
-      this.showStartModal(); // предложим продолжить внутри modal
-    } else {
-      this.showStartModal();
-    }
-  },
-
-  renderPlayersList() {
-    const all = Players.list || [];
-    this.playersExistingEl.innerHTML = '';
-    if (!all.length) {
-      this.playersExistingEl.textContent = 'Нет сохранённых игроков. Добавьте имя.';
-      return;
-    }
-    all.forEach(p => {
-      const id = 'pl_' + p.name.replace(/\s+/g,'_');
-      const label = document.createElement('label');
-      label.innerHTML = `<input type="checkbox" data-name="${p.name}" /> ${p.name}`;
-      this.playersExistingEl.appendChild(label);
-    });
-  },
-
-  loadSavedSessionsList() {
-    const sessions = Storage.load('level2_sessions') || [];
-    this.sessionList.innerHTML = '';
-    this.savedSessionsEl.innerHTML = '';
-    sessions.forEach(s => {
-      const btn = document.createElement('button');
-      btn.className = 'btn secondary';
-      btn.textContent = `Продолжить ${s.poolName}`;
-      btn.addEventListener('click', () => this.resumeSession(s.id));
-      this.sessionList.appendChild(btn);
-      // также в modal
-      const btn2 = btn.cloneNode(true);
-      btn2.addEventListener('click', () => this.resumeSession(s.id));
-      this.savedSessionsEl.appendChild(btn2);
-    });
-  },
-
-  showStartModal() {
-    this.startModal.classList.remove('hidden');
-    this.renderPlayersList();
-    this.loadSavedSessionsList();
-  },
-
-  hideStartModal() {
-    this.startModal.classList.add('hidden');
-  },
-
-  onAddPlayer() {
-    const name = (this.newPlayerName.value || '').trim();
-    if (!name) return;
-    Players.add(name);
-    this.newPlayerName.value = '';
-    this.renderPlayersList();
-  },
-
-  onStartClicked() {
-    // собрать выбранных игроков
-    const checkboxes = Array.from(this.playersExistingEl.querySelectorAll('input[type=checkbox]:checked'));
-    if (!checkboxes.length) {
-      alert('Выберите хотя бы одного игрока.');
-      return;
-    }
-    const players = checkboxes.map(cb => ({ name: cb.dataset.name || cb.getAttribute('data-name'), balance: 100000 }));
-    // создать пул
-    const pool = {
-      id: 'pool_' + Date.now(),
-      poolName: 'Пул ' + new Date().toLocaleString(),
-      players,
-      currentRound: 0,
-      usedScenarios: [],
-      history: []
-    };
-    this.state = pool;
-    // сохранить reference как последний
-    Storage.save('level2_last_session', pool.id);
-    let sessions = Storage.load('level2_sessions') || [];
-    sessions = sessions.filter(s => s.id !== pool.id);
-    sessions.unshift({ id: pool.id, poolName: pool.poolName, ts: Date.now() });
-    Storage.save('level2_sessions', sessions);
-    Storage.save('level2_session_' + pool.id, pool);
-    this.hideStartModal();
-    this.startGame();
-  },
-
-  resumeSession(id) {
-    const saved = Storage.load('level2_session_' + id);
-    if (!saved) {
-      alert('Сессия не найдена');
-      this.loadSavedSessionsList();
-      return;
-    }
-    this.state = saved;
-    this.hideStartModal();
-    this.startGame();
-  },
-
-  startGame() {
-    // подготовить UI, balances, pick scenarios if new
-    if (!this.state) return;
-    if (!this.state.pickedScenarios) {
-      this.state.pickedScenarios = this.pickScenarios(this.totalRounds);
-    }
-    this.renderBalances();
-    this.currentScenarioIndex = this.state.currentRound || 0;
-    this.updateRoundInfo();
-    this.createChart();
-    this.renderScenario();
-    this.hideSummary();
-  },
-
-  pickScenarios(n) {
-    // выбираем n уникальных id
-    const ids = Array.from({length:this.scenarios.length},(_,i)=>i);
-    const chosen = [];
-    while (chosen.length < n && ids.length) {
-      const idx = Math.floor(Math.random() * ids.length);
-      chosen.push(this.scenarios.splice(idx,1)[0]); // remove from pool to avoid repeat across games
-      ids.splice(idx,1);
-    }
-    // если pool меньше n, просто возвращаем what we have
-    return chosen;
-  },
-
   renderBalances() {
+    if (!this.balancesEl || !this.pool) return;
     this.balancesEl.innerHTML = '';
-    this.state.players.forEach(p => {
-      const el = document.createElement('div');
-      el.className = 'balance-card';
-      el.dataset.name = p.name;
-      el.innerHTML = `<div><strong>${p.name}</strong></div><div class="small">Баланс: <span data-balance>${p.balance.toFixed(2)}</span> ₽</div>`;
-      this.balancesEl.appendChild(el);
-    });
-  },
-
-  updateBalancesUI() {
-    Array.from(this.balancesEl.children).forEach(card => {
-      const name = card.dataset.name;
-      const player = this.state.players.find(p => p.name === name);
-      if (player) {
-        const span = card.querySelector('[data-balance]');
-        span.textContent = player.balance.toFixed(2);
-      }
-    });
-  },
-
-  createChart() {
-    // инициализация Chart.js
-    const ctx = this.chartCanvas.getContext('2d');
-    if (this.chart) this.chart.destroy();
-    this.chart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: Array.from({length:this.scenarioLength},(_,i)=>i+1),
-        datasets: [{
-          label: 'Цена',
-          data: Array(this.scenarioLength).fill(null),
-          borderColor: '#0078d4',
-          tension: 0.2,
-          borderWidth: 2,
-          pointRadius: 0,
-          fill:false
-        }]
-      },
-      options: {
-        responsive:true,
-        maintainAspectRatio:false,
-        animation:false,
-        scales:{ x:{ display:false } }
-      }
+    this.pool.players.forEach(p => {
+      const div = document.createElement('div');
+      div.className = 'balance-card';
+      div.innerHTML = `<strong>${p.name}</strong><div class="small">Баланс: <span data-name="${p.name}" class="bal-val">${Number(p.balance).toLocaleString('ru-RU')} ₽</span></div>`;
+      this.balancesEl.appendChild(div);
     });
   },
 
   renderScenario() {
-    // отрисовать текущий сценарий (start)
-    const idx = this.currentScenarioIndex;
-    if (idx >= this.state.pickedScenarios.length) {
-      this.showFinalSummary();
+    if (!this.pool) return;
+    const idx = this.pool.currentIndex || 0;
+    if (idx >= this.pool.pickedScenarios.length) {
+      this.showFinal();
       return;
     }
-    const sc = this.state.pickedScenarios[idx];
+    const sc = this.pool.pickedScenarios[idx];
     this.currentScenario = sc;
-    this.scenarioTitle.textContent = `${sc.title} (${idx+1}/${this.totalRounds})`;
-    this.scenarioNews.textContent = `Новость: ${sc.news}`;
-    // показать стартовую серию на графике
-    this.chart.data.datasets[0].data = sc.startSeries.slice();
-    this.chart.update();
+    this.scenarioTitle.textContent = `${sc.paper || sc.title || 'Сценарий'} — ${idx+1}/${this.totalRounds}`;
+    // show news/analysis/startPosition using updateRoundInfo
+    this.updateRoundInfo();
+    // draw start image instead of chart
+    if (this.imageEl) {
+      this.imageEl.classList.remove('fading');
+      this.imageEl.src = sc.startImage || '';
+      this.imageEl.alt = `${sc.paper || sc.title} — старт`;
+    }
     // render action forms for each player
     this.renderActionForms();
     this.btnReveal.disabled = false;
     this.btnNext.disabled = true;
+  },
+
+  updateRoundInfo() {
+    if (!this.currentScenario) return;
+    const sc = this.currentScenario;
+    const idx = (this.pool && this.pool.currentIndex) ? this.pool.currentIndex : 0;
     this.roundInfo.textContent = `Раунд ${idx+1} / ${this.totalRounds}`;
-    // save progress
-    this.saveState();
+    // compose info
+    const parts = [];
+    if (sc.news) parts.push(`Новость: ${sc.news}`);
+    if (sc.analysis) parts.push(`Анализ: ${sc.analysis}`);
+    if (sc.startPosition) {
+      const sp = sc.startPosition;
+      parts.push(`Начальная позиция: ${sp.count} шт @ ${Number(sp.price).toLocaleString('ru-RU')} ₽`);
+    } else if (typeof sc.startPrice === 'number') {
+      parts.push(`Стартовая цена: ${Number(sc.startPrice).toFixed(2)} ₽`);
+    }
+    this.scenarioNews.textContent = parts.join(' — ');
   },
 
   renderActionForms() {
+    if (!this.actionsWrapper || !this.pool) return;
     this.actionsWrapper.innerHTML = '';
-    this.state.players.forEach((p,pi) => {
+    this.pool.players.forEach((p, pi) => {
       const wrapper = document.createElement('div');
       wrapper.className = 'player-action';
+      // max qty estimate (for buy)
+      const price = this.currentScenario.startPrice || this.currentScenario.startSeries.slice(-1)[0];
+      const maxQty = Math.floor((p.balance > 0 ? p.balance : 0) / (price || 1));
       wrapper.innerHTML = `
-        <div style="flex:1;">
-          <div><strong>${p.name}</strong></div>
-          <div class="small">Баланс: ${p.balance.toFixed(0)} ₽</div>
+        <div style="flex:1">
+          <strong>${p.name}</strong>
+          <div class="small">Баланс: ${Number(p.balance).toLocaleString('ru-RU')} ₽</div>
         </div>
-        <div style="min-width:260px; display:flex; gap:6px; align-items:center;">
-          <select data-player="${pi}" class="action-type">
+        <div style="min-width:300px; display:flex; gap:8px; align-items:center;">
+          <select data-player="${p.name}" class="action-type">
             <option value="hold">Держать</option>
-            <option value="market_buy">Рыночная — купить</option>
-            <option value="market_sell">Рыночная — продать (шорт)</option>
-            <option value="limit_buy">Лимит — купить</option>
-            <option value="limit_sell">Лимит — продать</option>
+            <option value="market_buy">Рыночная — Купить</option>
+            <option value="market_sell">Рыночная — Продать</option>
+            <option value="limit_buy">Лимит — Купить</option>
+            <option value="limit_sell">Лимит — Продать</option>
           </select>
-          <input type="number" min="1" value="1" style="width:70px;" data-player-qty="${pi}" />
-          <input type="number" placeholder="Цена (для лимит)" style="width:90px;" data-player-price="${pi}" />
+          <input type="number" data-player="${p.name}" class="action-qty" min="0" value="${Math.max(0, Math.min(1, maxQty))}" placeholder="шт" style="width:80px"/>
+          <input type="number" data-player="${p.name}" class="action-price hidden" placeholder="цена лимита" style="width:100px"/>
         </div>
       `;
       this.actionsWrapper.appendChild(wrapper);
-      // подсказка: установить разумный макс по qty исходя из баланса и текущей цене
-      const qtyInput = wrapper.querySelector(`[data-player-qty="${pi}"]`);
-      const priceInput = wrapper.querySelector(`[data-player-price="${pi}"]`);
-      qtyInput.addEventListener('input', () => {});
     });
-  },
-
-  onReveal() {
-    // собрать действия
-    const forms = Array.from(this.actionsWrapper.querySelectorAll('.player-action'));
-    const actions = [];
-    const startPrice = this.currentScenario.startPrice;
-    for (let i=0;i<forms.length;i++){
-      const select = forms[i].querySelector('.action-type');
-      const qty = Math.max(0, Math.floor(+forms[i].querySelector(`[data-player-qty="${i}"]`).value || 0));
-      const price = +forms[i].querySelector(`[data-player-price="${i}"]`).value || null;
-      const type = select.value;
-      // проверка на доступность покупки
-      const player = this.state.players[i];
-      if ((type === 'market_buy') && (player.balance < startPrice * qty)) {
-        alert(`${player.name}: недостаточно средств для покупки по рынку (нужно ${Math.round(startPrice*qty)} ₽)`);
-        return;
-      }
-      if ((type === 'limit_buy') && (price && player.balance < price * qty)) {
-        alert(`${player.name}: недостаточно средств для лимитной покупки по указанной цене`);
-        return;
-      }
-      actions.push({ playerIndex: i, type, qty, price });
-    }
-    // анимировать переход графика от startSeries -> endSeries
-    this.btnReveal.disabled = true;
-    this.animateChart(this.currentScenario.startSeries, this.currentScenario.endSeries, 1200).then(() => {
-      // после анимации вычисляем результаты
-      const results = this.evaluateActions(actions, this.currentScenario);
-      // применить результаты к балансу
-      results.forEach(r => {
-        if (r.executed) {
-          this.state.players[r.playerIndex].balance += r.profit;
-        }
+    // attach listeners for showing price input on limit
+    this.actionsWrapper.querySelectorAll('.action-type').forEach(sel => {
+      sel.addEventListener('change', (e) => {
+        const player = sel.dataset.player;
+        const parent = sel.closest('.player-action');
+        const priceInp = parent.querySelector('.action-price');
+        if (sel.value === 'limit_buy' || sel.value === 'limit_sell') priceInp.classList.remove('hidden'); else priceInp.classList.add('hidden');
       });
-      // сохранить историю
-      this.state.history = this.state.history || [];
-      this.state.history.push({ scenarioId: this.currentScenario.id, results });
-      this.updateBalancesUI();
-      this.renderRoundResults(results);
+    });
+  },
+
+  collectActions() {
+    // returns map name -> {type,qty,price}
+    const actions = {};
+    if (!this.pool) return actions;
+    const nodes = Array.from(this.actionsWrapper.querySelectorAll('.player-action'));
+    nodes.forEach(node => {
+      const name = node.querySelector('strong').textContent;
+      const sel = node.querySelector('.action-type');
+      const qtyInp = node.querySelector('.action-qty');
+      const priceInp = node.querySelector('.action-price');
+      const type = sel ? sel.value : 'hold';
+      const qty = qtyInp ? Math.max(0, Math.floor(Number(qtyInp.value)||0)) : 0;
+      const price = priceInp && priceInp.value ? Number(priceInp.value) : null;
+      actions[name] = { type, qty, price };
+    });
+    return actions;
+  },
+
+  handleReveal() {
+    if (!this.pool || !this.currentScenario) return;
+    this.btnReveal.disabled = true;
+    const sc = this.currentScenario;
+    // вместо анимации Chart.js — плавно сменим картинку с startImage на endImage
+    if (!this.imageEl) {
+      // fallback: сразу считать
+      const actions = this.collectActions();
+      this.calculatePayouts(actions, sc);
       this.btnNext.disabled = false;
-      this.saveState();
-    });
-  },
-
-  animateChart(fromSeries, toSeries, duration) {
-    // простая интерполяция с шагами
-    return new Promise(resolve => {
-      const steps = 60;
-      let step = 0;
-      const s1 = fromSeries.slice();
-      const s2 = toSeries.slice();
-      const frame = () => {
-        step++;
-        const t = step / steps;
-        const data = s1.map((v,i) => +(v + (s2[i] - v) * t).toFixed(2));
-        this.chart.data.datasets[0].data = data;
-        this.chart.update('none');
-        if (step >= steps) {
-          resolve();
-        } else {
-          requestAnimationFrame(frame);
-        }
-      };
-      frame();
-    });
-  },
-
-  evaluateActions(actions, scenario) {
-    const res = [];
-    // линейный проход по точкам для проверки исполнения лимитных заявок
-    const path = this.interpolatePath(scenario.startSeries, scenario.endSeries);
-    actions.forEach(a => {
-      const player = this.state.players[a.playerIndex];
-      let executed = false;
-      let execPrice = null;
-      let profit = 0;
-      const start = scenario.startPrice;
-      const end = scenario.endPrice;
-      if (a.type === 'hold') {
-        executed = false;
-        profit = 0;
-      } else if (a.type === 'market_buy') {
-        executed = true;
-        execPrice = start;
-        profit = (end - execPrice) * a.qty;
-      } else if (a.type === 'market_sell') {
-        // шорт
-        executed = true;
-        execPrice = start;
-        profit = (execPrice - end) * a.qty;
-      } else if (a.type === 'limit_buy') {
-        // выполнится, если path в какой-то точке <= price
-        const limit = +a.price;
-        const hit = path.some(p => p <= limit);
-        if (hit) {
-          executed = true;
-          execPrice = limit;
-          profit = (end - execPrice) * a.qty;
-        } else {
-          executed = false;
-          profit = 0;
-        }
-      } else if (a.type === 'limit_sell') {
-        const limit = +a.price;
-        const hit = path.some(p => p >= limit);
-        if (hit) {
-          executed = true;
-          execPrice = limit;
-          profit = (execPrice - end) * a.qty;
-        } else {
-          executed = false;
-          profit = 0;
-        }
-      }
-      // округления
-      profit = +profit.toFixed(2);
-      res.push({ playerIndex: a.playerIndex, executed, execPrice, profit, qty: a.qty, action: a.type });
-    });
-    return res;
-  },
-
-  interpolatePath(s1, s2) {
-    // формируем path линейной интерполяцией между точками s1->s2
-    const len = Math.max(s1.length, s2.length);
-    const path = [];
-    for (let i=0;i<len;i++){
-      const a = s1[Math.min(i, s1.length-1)];
-      const b = s2[Math.min(i, s2.length-1)];
-      // добавляем промежуточные подпункты
-      for (let k=0;k<6;k++){
-        const t = k/6;
-        path.push(a + (b-a)*t);
-      }
-    }
-    return path;
-  },
-
-  renderRoundResults(results) {
-    // короткий вывод: кто сколько заработал/не исполнилось
-    const out = results.map(r => {
-      const name = this.state.players[r.playerIndex].name;
-      if (!r.executed) return `${name}: заявка не исполнилась`;
-      return `${name}: ${r.profit >=0 ? '+' : ''}${r.profit.toFixed(2)} ₽ (qty ${r.qty})`;
-    }).join('\n');
-    alert('Результаты:\n' + out);
-  },
-
-  nextRound() {
-    this.state.currentRound = (this.state.currentRound || 0) + 1;
-    this.currentScenarioIndex = this.state.currentRound;
-    if (this.currentScenarioIndex >= this.totalRounds) {
-      this.showFinalSummary();
-      this.saveState();
       return;
     }
-    this.saveState();
-    this.renderScenario();
+    // плавное исчезновение
+    this.imageEl.classList.add('fading');
+    const transitionMs = 650;
+    setTimeout(() => {
+      // смена на конечную картинку
+      this.imageEl.src = sc.endImage || sc.startImage || '';
+      this.imageEl.alt = `${sc.paper || sc.title} — финал`;
+      // показать (fade-in)
+      this.imageEl.classList.remove('fading');
+      // после окончания перехода запускаем расчет выплат
+      setTimeout(() => {
+        const actions = this.collectActions();
+        this.calculatePayouts(actions, sc);
+        this.btnNext.disabled = false;
+      }, transitionMs + 50);
+    }, transitionMs);
   },
 
-  showFinalSummary() {
+  calculatePayouts(actions, sc) {
+    // sc must have minPrice/maxPrice/endPrice/startPrice
+    const startPrice = sc.startPrice || sc.startSeries.slice(-1)[0];
+    const endPrice = sc.endPrice || sc.endSeries.slice(-1)[0];
+    const minPrice = (typeof sc.minPrice === 'number') ? sc.minPrice : Math.min(...sc.endSeries, ...sc.startSeries);
+    const maxPrice = (typeof sc.maxPrice === 'number') ? sc.maxPrice : Math.max(...sc.endSeries, ...sc.startSeries);
+    // record per player result
+    const roundResult = [];
+    this.pool.players.forEach(p => {
+      const action = actions[p.name] || { type: 'hold', qty: 0 };
+      let note = '';
+      let pnl = 0;
+      if (action.type === 'hold' || action.qty === 0) {
+        note = 'Держал';
+        pnl = 0;
+      } else if (action.type === 'market_buy') {
+        // buy at market open (startPrice), close at endPrice
+        pnl = (endPrice - startPrice) * action.qty;
+        note = `Маркет покупка ${action.qty} шт`;
+      } else if (action.type === 'market_sell') {
+        // short: sell at start, buy back at end
+        pnl = (startPrice - endPrice) * action.qty;
+        note = `Маркет продажа (шорт) ${action.qty} шт`;
+      } else if (action.type === 'limit_buy') {
+        // buy if price touched <= limit price somewhere between min/max
+        const limit = action.price;
+        if (limit === null) { note = 'Лимит без цены'; pnl = 0; }
+        else {
+          // for buy, execution if minPrice <= limit
+          if (minPrice <= limit) {
+            // executed at limit price (assume execution at limit)
+            pnl = (endPrice - limit) * action.qty;
+            note = `Лимит покупка исполнена @${limit}`;
+          } else {
+            note = 'Заявка не исполнилась';
+            pnl = 0;
+          }
+        }
+      } else if (action.type === 'limit_sell') {
+        const limit = action.price;
+        if (limit === null) { note = 'Лимит без цены'; pnl = 0; }
+        else {
+          // for sell, execution if maxPrice >= limit
+          if (maxPrice >= limit) {
+            // executed at limit price (assume execution at limit)
+            pnl = (limit - endPrice) * action.qty;
+            note = `Лимит продажа исполнена @${limit}`;
+          } else {
+            note = 'Заявка не исполнилась';
+            pnl = 0;
+          }
+        }
+      }
+      // update balance
+      p.balance = Number((p.balance + pnl).toFixed(2));
+      roundResult.push({ name: p.name, pnl, note, balance: p.balance });
+    });
+
+    // save to history
+    this.pool.history = this.pool.history || [];
+    this.pool.history.push({ scenarioId: sc.id, result: roundResult });
+    // persist pool
+    localStorage.setItem(this.keyPrefix + this.pool.id, JSON.stringify(this.pool));
+    // update UI: balances and small table of results
+    this.renderBalances();
+    this.showRoundResults(roundResult);
+  },
+
+  showRoundResults(roundResult) {
+    // simple temporary popup: append below actions
+    const resBox = document.createElement('div');
+    resBox.className = 'card';
+    resBox.innerHTML = '<strong>Результаты раунда:</strong><div style="margin-top:8px;"></div>';
+    const body = resBox.querySelector('div');
+    roundResult.forEach(r => {
+      const row = document.createElement('div');
+      row.textContent = `${r.name}: ${r.pnl >= 0 ? '+' : ''}${r.pnl.toFixed(2)} ₽ — ${r.note} — Баланс: ${Number(r.balance).toLocaleString('ru-RU')} ₽`;
+      body.appendChild(row);
+    });
+    // insert after actionsWrapper
+    this.actionsWrapper.parentNode.insertBefore(resBox, this.actionsWrapper.nextSibling);
+    // auto remove after 6s
+    setTimeout(() => { if (resBox.parentNode) resBox.parentNode.removeChild(resBox); }, 6000);
+  },
+
+  nextScenario() {
+    // advance index
+    if (!this.pool) return;
+    this.pool.currentIndex = (this.pool.currentIndex || 0) + 1;
+    // if finished
+    if (this.pool.currentIndex >= this.pool.pickedScenarios.length) {
+      this.showFinal();
+      localStorage.setItem(this.keyPrefix + this.pool.id, JSON.stringify(this.pool));
+      return;
+    }
+    // save and render next
+    localStorage.setItem(this.keyPrefix + this.pool.id, JSON.stringify(this.pool));
+    // clear any previous action-result cards
+    const nextCards = Array.from(document.querySelectorAll('.card'));
+    // avoid removing main cards, just re-render
+    this.renderScenario();
+    this.btnNext.disabled = true;
+  },
+
+  showFinal() {
+    // build summary table
     this.finalSummary.classList.remove('hidden');
     this.noSummary.classList.add('hidden');
-    // таблица результатов: рассчитать прибыль и % прибыли от 100k
-    this.summaryTable.innerHTML = '';
-    const header = `<tr><th>Игрок</th><th>Сумма, ₽</th><th>Прибыль, ₽</th><th>% прибыли</th><th>Очки</th></tr>`;
-    this.summaryTable.insertAdjacentHTML('beforeend', header);
-    this.state.players.forEach(p => {
-      const profit = +(p.balance - 100000).toFixed(2);
-      const pct = +(profit / 100000 * 100).toFixed(2);
-      const points = Math.round(500 + (pct * 20));
-      // сохранить в Players.list score
+    this.summaryTable.innerHTML = '<tr><th>Игрок</th><th>Итоговый баланс</th><th>Прибыль</th><th>Очки</th></tr>';
+    this.pool.players.forEach(p => {
+      const profit = Number((p.balance - (p.initialBalance || 100000)).toFixed(2));
+      const profitPercent = ((profit) / (p.initialBalance || 100000)) * 100;
+      const points = Math.round(500 + profitPercent * 20);
+      // save to Players score
       const pl = Players.list.find(x => x.name === p.name);
       if (pl) pl.score = (pl.score || 0) + points;
-      this.summaryTable.insertAdjacentHTML('beforeend',
-        `<tr><td>${p.name}</td><td>${p.balance.toFixed(2)}</td><td>${profit}</td><td>${pct}%</td><td>${points}</td></tr>`);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${p.name}</td><td>${Number(p.balance).toLocaleString('ru-RU')} ₽</td><td>${profit >=0 ? '+' : ''}${profit.toFixed(2)} ₽ (${profitPercent.toFixed(2)}%)</td><td>${points}</td>`;
+      this.summaryTable.appendChild(tr);
     });
-    Leaderboard.init();
-    this.saveState(true); // финал и сохранение
+    // persist players
+    Storage.save('players', Players.list);
+    // persist pool final state and remove "last"
+    localStorage.setItem(this.keyPrefix + this.pool.id, JSON.stringify(this.pool));
+    localStorage.removeItem(this.keyPrefix + 'last');
   },
 
   finishAndSave() {
-    // сохранить финальную сессию отдельно и удалить last_session pointer
-    const sessions = Storage.load('level2_sessions') || [];
-    // оставить запись, но удалить last pointer
-    Storage.save('level2_last_session', null);
-    Storage.save('level2_session_' + this.state.id, this.state);
-    // обновить Players storage
-    Storage.save('players', Players.list);
-    alert('Результаты сохранены. Вернитесь в главное меню.');
-    // можно перейти на главную
+    // final save and redirect to menu
+    localStorage.setItem(this.keyPrefix + this.pool.id, JSON.stringify(this.pool));
+    localStorage.removeItem(this.keyPrefix + 'last');
+    alert('Результат сохранён. Возврат в меню.');
     window.location.href = '../index.html';
   },
 
   saveAndExit() {
-    // сохраняем состояние текущей сессии и помечаем last
-    if (!this.state || !this.state.id) return;
-    Storage.save('level2_session_' + this.state.id, this.state);
-    Storage.save('level2_last_session', this.state.id);
-    const sessions = Storage.load('level2_sessions') || [];
-    if (!sessions.find(s=>s.id===this.state.id)) {
-      sessions.unshift({ id: this.state.id, poolName: this.state.poolName, ts: Date.now() });
-      Storage.save('level2_sessions', sessions);
-    }
-    alert('Сессия сохранена. Возврат в главное меню.');
+    if (!this.pool) return;
+    localStorage.setItem(this.keyPrefix + this.pool.id, JSON.stringify(this.pool));
+    localStorage.setItem(this.keyPrefix + 'last', this.pool.id);
+    alert('Пул сохранён. Выход в меню.');
     window.location.href = '../index.html';
   },
 
-  saveState(final=false) {
-    if (!this.state || !this.state.id) return;
-    Storage.save('level2_session_' + this.state.id, this.state);
-    if (final) {
-      // удалить указатель последней активной игры
-      Storage.save('level2_last_session', null);
-    } else {
-      Storage.save('level2_last_session', this.state.id);
-    }
-    this.loadSavedSessionsList();
+  openNewPoolModal() {
+    // clear players selection and show modal
+    this.startModal.classList.remove('hidden');
   },
 
-  hideSummary() {
-    this.finalSummary.classList.add('hidden');
-    this.noSummary.classList.remove('hidden');
-  },
-
-  handleBack() {
-    // при нажатии назад — сохранить прогресс и перейти
-    if (confirm('Выйти и сохранить прогресс?')) {
-      this.saveAndExit();
-    } else {
-      // stay
-    }
+  handleCancelStart() {
+    this.startModal.classList.add('hidden');
   }
 };
 
-// Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', () => {
-  // гарантируем что Players уже инициализирован
-  if (typeof Players !== 'undefined') {
-    if (!Players.list || !Players.list.length) Players.init();
-  }
-  Level2.init();
-});
+document.addEventListener('DOMContentLoaded', () => Level2.init());

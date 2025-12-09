@@ -173,8 +173,15 @@ const Level1 = {
       });
     }
 
-    if (this.closeStartBtn) this.closeStartBtn.addEventListener('click', () => this.hideStart && this.hideStart());
+      if (this.closeStartBtn) {
+          this.closeStartBtn.addEventListener('click', () => {
+              // Сначала выполним существующую логику, если она нужна
+              if (this.hideStart) this.hideStart();
 
+              // Перенаправляем на главную страницу
+              window.location.href = "../index.html";
+          });
+      }
     // Подсказки
     if (this.hintToggle) this.hintToggle.addEventListener('click', () => this.toggleHint && this.toggleHint());
     if (this.hintNext) this.hintNext.addEventListener('click', () => this.nextHint && this.nextHint());

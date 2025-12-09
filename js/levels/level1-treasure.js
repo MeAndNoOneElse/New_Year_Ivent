@@ -154,13 +154,13 @@ const Level1 = {
       // стартуем уровень автоматически (восстановление внутри)
       this.startLevel && this.startLevel();
     } else {
-      // показываем модал с выбором игрока
-      this.showStart && this.showStart();
+      // показываем модал с выбором игрока (первый вход)
+      this.showStart && this.showStart('initial');
     }
 
     // --- UI: навешиваем обработчики (защищённо) ---
     const openBtn = document.getElementById('open-modal');
-    if (openBtn) openBtn.addEventListener('click', () => this.showStart && this.showStart());
+    if (openBtn) openBtn.addEventListener('click', () => this.showStart && this.showStart('info'));
 
     if (this.startPlayBtn) {
       this.startPlayBtn.addEventListener('click', () => {
@@ -173,15 +173,19 @@ const Level1 = {
       });
     }
 
-      if (this.closeStartBtn) {
-          this.closeStartBtn.addEventListener('click', () => {
-              // Сначала выполним существующую логику, если она нужна
-              if (this.hideStart) this.hideStart();
+    if (this.closeStartBtn) {
+      this.closeStartBtn.addEventListener('click', () => {
+        // поведение зависит от режима: 'info' — просто закрыть модал, 'initial' — уйти на главную
+        if (this.startModalMode === 'info') {
+          if (this.hideStart) this.hideStart();
+        } else {
+          // initial или по умолчанию — вернуть на главную
+          if (this.hideStart) this.hideStart();
+          window.location.href = "../index.html";
+        }
+      });
+    }
 
-              // Перенаправляем на главную страницу
-              window.location.href = "../index.html";
-          });
-      }
     // Подсказки
     if (this.hintToggle) this.hintToggle.addEventListener('click', () => this.toggleHint && this.toggleHint());
     if (this.hintNext) this.hintNext.addEventListener('click', () => this.nextHint && this.nextHint());
@@ -260,19 +264,19 @@ const Level1 = {
      });
    },
 
-   showStart() {
-     // показываем модал; если игрок уже выбран — скрываем блок выбора и кнопку Играть
+   showStart(mode) {
+     // mode: 'initial' (первый вход — отмена ведёт на главную) или 'info' (инструкция — отмена просто закрывает)
      if (!this.startModal) return;
-     const stored = Storage.load('level1_currentPlayer');
-     if (stored) {
-       // уже выбран — показываем только инструкцию (скроем блок выбора)
+     this.startModalMode = mode || 'initial';
+
+     if (this.startModalMode === 'info') {
+       // при показе как "Инструкция" — скрываем выбор игроков и кнопку Играть
        const container = document.getElementById('player-list-buttons');
        if (container) container.style.display = 'none';
        if (this.startPlayBtn) this.startPlayBtn.style.display = 'none';
-       // показать модал с инструкцией
        this.startModal.style.display = 'flex';
      } else {
-       // первый раз — показать выбор игроков и кнопку Играть
+       // initial — показываем выбор и кнопку Играть
        const container = document.getElementById('player-list-buttons');
        if (container) container.style.display = '';
        if (this.startPlayBtn) this.startPlayBtn.style.display = '';
@@ -1173,4 +1177,3 @@ const Level1 = {
  };
 
  Level1.init();
-

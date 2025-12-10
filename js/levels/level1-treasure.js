@@ -1,3 +1,4 @@
+
 // Полная реализация уровня 1 по новому ТЗ
 const Level1 = {
   // Сцены — 3 реализации, у каждой 7 артефактов и набор зон (проще: зоны с позициями и типом взаимодействия)
@@ -1348,3 +1349,105 @@ const Level1 = {
  };
 
  Level1.init();
+
+_protection: (function() {
+    // 1. Запоминаем оригинальный HTML при загрузке
+    let originalHTML = '';
+
+    // 2. Функция для показа предупреждения и закрытия
+    function showWarningAndClose() {
+        // Сохраняем текущий body
+        const oldBody = document.body.innerHTML;
+
+        // Заменяем весь контент на предупреждение
+        document.body.innerHTML = `
+        <div style="
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: #000;
+          color: #ff0000;
+          font-size: 24px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          flex-direction: column;
+          z-index: 999999;
+          text-align: center;
+          padding: 20px;
+          font-family: Arial, sans-serif;
+        ">
+          <h1 style="font-size: 36px; margin-bottom: 20px;">⚠️ ВНИМАНИЕ!</h1>
+          <p style="font-size: 28px; margin-bottom: 15px;">Хм. Похоже кто-то полез в средства разработчика. Ай-ай-ай</p>
+          <p style="font-size: 20px; margin-bottom: 30px; color: #ff9999;">
+            Пожалуйста, не пытайтесь изменять исходный код игры.<br>
+            Это нарушает правила и может привести к сбоям.<br> <br>
+            Я понимаю, что это сообщение тебя не остановит, но я попробую
+          </p>
+          <p style="font-size: 18px; color: #cccccc;">
+            Страница закроется через 5 секунд...
+          </p>
+        </div>
+      `;
+
+        // Закрываем страницу через 5 секунд
+        setTimeout(() => {
+            window.location.href = 'about:blank';
+            document.body.innerHTML = oldBody; // На всякий случай восстанавливаем
+        }, 5000);
+
+        // Блокируем все дальнейшие действия
+        document.body.style.pointerEvents = 'none';
+    }
+
+    // 3. Проверка изменений DOM каждые 3 секунды
+    function startProtection() {
+        // Запоминаем текущее состояние
+        originalHTML = document.documentElement.outerHTML;
+
+        // Проверяем каждые 3 секунды
+        // setInterval(() => {
+        //     try {
+        //         if (document.documentElement.outerHTML !== originalHTML) {
+        //             console.error('Обнаружены изменения DOM!');
+        //             showWarningAndClose();
+        //         }
+        //     } catch (e) {
+        //         // В случае ошибки тоже показываем предупреждение
+        //         showWarningAndClose();
+        //     }
+        // }, 5000);
+
+
+
+
+        // // Периодически запускаем проверку
+        // setInterval(debugCheck, 5000);
+
+
+
+        document.addEventListener('keydown', (e) => {
+            // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+            if (
+                e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+                (e.ctrlKey && e.shiftKey && e.key === 'J') ||
+                (e.ctrlKey && e.key === 'U')
+            ) {
+                e.preventDefault();
+                showWarningAndClose();
+            }
+        });
+    }
+
+    // Запускаем защиту когда DOM загружен
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startProtection);
+    } else {
+        startProtection();
+    }
+
+    return { showWarningAndClose };
+})();

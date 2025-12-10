@@ -227,7 +227,9 @@ const Level1 = {
               this.toggleHint && this.toggleHint();
               this.showSmartHint(); // ← ДОБАВИТЬ
           });
-      }    if (this.hintNext) this.hintNext.addEventListener('click', () => this.nextHint && this.nextHint());
+      }
+      if (this.hintNext) {
+          this.hintNext.addEventListener('click', () => this.nextHint && this.nextHint());}
     if (this.hintReset) this.hintReset.addEventListener('click', () => this.resetHints && this.resetHints());
 
     // Кнопки управления уровнем
@@ -486,6 +488,9 @@ const Level1 = {
       this.showSmartHint();
     // Попытка загрузить прогресс (чтобы определить сцену и collected)
     const saved = this.loadSavedProgress();
+      if (this.hintText && this.scene && this.scene.hintTexts) {
+          this.hintText.textContent = this.scene.hintTexts[0];
+      }
     if (saved && saved.sceneId) {
       // используем сохранённую сцену — не выбираем случайную
       this.scene = this.scenes.find(s => s.id === saved.sceneId) || this.scenes[0];
@@ -1273,25 +1278,30 @@ const Level1 = {
      } catch (e) {}
    },
 
-   toggleHint() {
-     if (this.hintPanel.style.display === 'block') this.hintPanel.style.display = 'none';
-     else { this.hintPanel.style.display = 'block'; this.hintLevel = 0; this.nextHint(); }
-   },
-   nextHint() {
-     if (!this.scene) { this.hintText.textContent = 'Сначала нажмите "Играть".'; return; }
-     this.hintLevel = Math.min(3, this.hintLevel + 1);
-     this.hintText.textContent = this.scene.hintTexts[this.hintLevel - 1] || '';
-     // для level 2 behavior: подсвечиваем подозрительные зоны кратковременно
-     if (this.hintLevel === 2) {
-       // подсветить первые 2 подозрительных зоны
-       const els = Array.from(this.sceneEl.children).slice(0, 2);
-       els.forEach(el => { el.classList.add('hovered'); setTimeout(() => el.classList.remove('hovered'), 2400); });
-     } else if (this.hintLevel === 3) {
-       // подсказка почти спойлер — можно подсветить последние зоны (не раскрывая всё)
-       const els = Array.from(this.sceneEl.children).slice(-2);
-       els.forEach(el => { el.classList.add('hovered'); setTimeout(() => el.classList.remove('hovered'), 2400); });
-     }
-   },
+    toggleHint() {
+        if (this.hintPanel) {
+            const hidden = this.hintPanel.style.display === 'none';
+            this.hintPanel.style.display = hidden ? 'block' : 'none';
+            // ✅ ДОБАВЛЕНО: Показать текущую подсказку при открытии
+            if (!hidden && this.scene && this.scene.hintTexts) {
+                this.hintLevel = this.hintLevel || 0;
+                if (this.hintText) {
+                    this.hintText.textContent = this.scene.hintTexts[this.hintLevel];
+                }
+            }
+        }
+    },
+    nextHint() {
+        if (!this.scene || !this.scene.hintTexts) return;
+        const hints = this.scene.hintTexts;
+        // Циклически переходим к следующей подсказке
+        // (0 → 1 → 2 → ... → 8 → 0 → ...)
+        this.hintLevel = (this.hintLevel + 1) % hints.length;
+        if (this.hintText) {
+            this.hintText.textContent = hints[this.hintLevel];
+        }
+        console.log(`💡 Подсказка ${this.hintLevel + 1}/${hints.length}`);
+    },
    resetHints() { this.hintLevel = 0; this.hintText.textContent = ''; },
 
    resetLevel() {

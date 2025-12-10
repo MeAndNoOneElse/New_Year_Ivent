@@ -472,8 +472,11 @@ const Level2 = {
                         <!-- ИНФОРМАЦИЯ О НАЧАЛЬНОЙ ПОЗИЦИИ -->
                         ${this.currentScenario.startPosition.count > 0 ? `
                         <p style="background: #fff3e0; border-left: 3px solid #ff9800; padding: 8px; margin: 0 0 10px 0; font-size: 0.9em; border-radius: 3px;">
-                            📊 У вас есть начальная позиция: <strong>${this.currentScenario.startPosition.count} бумаг</strong>
+                            📊 У вас есть начальная позиция: <strong>${this.currentScenario.startPosition.count} бумаг по ${this.formatMoney(this.currentScenario.startPosition.price)} ₽</strong>
+
                             <br>Стоимость закрытия: <strong>${this.formatMoney(this.currentScenario.startPosition.count * this.currentScenario.startPrice)} ₽</strong>
+                                                    <br>Вы сможете продать макс: <strong>${this.calculateMaxShortSellable(playerName)} бумаг</strong> (чтобы оставить деньги на закрытие позиции)
+
                         </p>
                         ` : ''}
                         

@@ -280,17 +280,18 @@ const Level2 = {
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 30px;">
           <div style="flex: 1;">
             <h3>${this.currentScenario.paper}</h3>
-            <p><strong>Период:</strong> ${this.currentScenario.startDate} → ${this.currentScenario.endDate}</p>
-            <p><strong>Начальная цена:</strong> ${this.formatMoney(this.currentScenario.startPrice)} ₽</p>
-            <p><strong>Конечная цена:</strong> ${this.formatMoney(this.currentScenario.endPrice)} ₽</p>
-            <p><strong>Диапазон:</strong> ${this.formatMoney(this.currentScenario.minPrice)} - ${this.formatMoney(this.currentScenario.maxPrice)} ₽</p>
+            <p><strong>Период: </strong> ${this.currentScenario.startDate} → ${this.currentScenario.endDate}</p>
+            <p><strong>Начальная цена: </strong> ${this.formatMoney(this.currentScenario.startPrice)} ₽</p>
+            <p><strong>Начальная позиция: </strong>${this.currentScenario.startPosition.count} бумаг по ${this.formatMoney(this.currentScenario.startPosition.price)} ₽</p>
+
             <p><strong>Новость:</strong> ${this.currentScenario.news}</p>
             <p><strong>Анализ:</strong> ${this.currentScenario.analysis}</p>
           </div>
-          <div style="flex: 0 0 300px;">
+          
+        </div>
+        <div style="flex: 0 0 300px;">
             <img src="${this.currentScenario.startImage}" alt="Начальный график" style="width: 100%; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
           </div>
-        </div>
       `;
         }
 
@@ -321,75 +322,537 @@ const Level2 = {
                 bankruptDiv.className = 'player-action-form';
                 bankruptDiv.style.borderLeftColor = '#f44336';
                 bankruptDiv.innerHTML = `
-          <h4>${playerName}</h4>
-          <p style="color: #f44336; font-weight: bold; font-size: 1.2em;">
-            💔 БАНКРОТ
-          </p>
-          <p style="color: #f44336;">Баланс: ${this.formatMoney(balance)} ₽</p>
-          <p style="color: #999;">К сожалению, у вас закончились деньги. Вы не можете совершать сделки.</p>
-        `;
+                <h4>${playerName}</h4>
+                <p style="color: #f44336; font-weight: bold; font-size: 1.2em;">
+                    💔 БАНКРОТ
+                </p>
+                <p style="color: #f44336;">Баланс: ${this.formatMoney(balance)} ₽</p>
+                <p style="color: #999;">К сожалению, у вас закончились деньги. Вы не можете совершать сделки.</p>
+            `;
                 this.playerActionsContainer.appendChild(bankruptDiv);
                 return;
             }
 
             const maxShares = Math.floor(balance / this.currentScenario.startPrice);
+            const maxMoney = balance;
 
             const formHTML = `
-        <div class="player-action-form" data-player="${playerName}">
-          <h4>${playerName}</h4>
-          <p>💰 Баланс: <strong>${this.formatMoney(balance)} ₽</strong></p>
-          <p>📊 Начальная позиция: <strong>${this.currentScenario.paper} @ ${this.formatMoney(this.currentScenario.startPrice)} ₽</strong></p>
-          <p>📈 Можно купить max: <strong>${maxShares} бумаг</strong></p>
-          
-          <div class="action-type">
-            <label>
-              <input type="radio" name="action_${playerName}" value="hold" checked> 
-              Держать (ничего не делать)
-            </label>
-          </div>
-          
-          <div class="action-type">
-            <label>
-              <input type="radio" name="action_${playerName}" value="market_buy"> 
-              Рыночная заявка: КУПИТЬ @ ${this.formatMoney(this.currentScenario.startPrice)}
-            </label>
-            <input type="number" name="count_${playerName}" min="0" max="${maxShares}" value="0" placeholder="Кол-во бумаг" data-max="${maxShares}" data-price="${this.currentScenario.startPrice}">
-          </div>
-          
-          <div class="action-type">
-            <label>
-              <input type="radio" name="action_${playerName}" value="market_sell"> 
-              Рыночная заявка: ПРОДАТЬ (Шорт) @ ${this.formatMoney(this.currentScenario.startPrice)}
-            </label>
-            <input type="number" name="count_sell_${playerName}" min="0" max="${maxShares}" value="0" placeholder="Кол-во бумаг">
-          </div>
-          
-          <div class="action-type">
-            <label>
-              <input type="radio" name="action_${playerName}" value="limit_buy"> 
-              Лимитная заявка: КУПИТЬ по цене
-            </label>
-            <input type="number" name="limit_price_buy_${playerName}" value="${this.currentScenario.startPrice}" placeholder="Цена">
-            <input type="number" name="count_limit_buy_${playerName}" min="0" max="${maxShares}" value="0" placeholder="Кол-во" data-max="${maxShares}">
-          </div>
-          
-          <div class="action-type">
-            <label>
-              <input type="radio" name="action_${playerName}" value="limit_sell"> 
-              Лимитная заявка: ПРОДАТЬ по цене
-            </label>
-            <input type="number" name="limit_price_sell_${playerName}" value="${this.currentScenario.startPrice}" placeholder="Цена">
-            <input type="number" name="count_limit_sell_${playerName}" min="0" max="${maxShares}" value="0" placeholder="Кол-во">
-          </div>
-        </div>
-      `;
+            <div class="player-action-form" data-player="${playerName}">
+                <h4>${playerName}</h4>
+                <p>💰 Баланс: <strong>${this.formatMoney(balance)} ₽</strong></p>
+                <p>📊 Начальная позиция: <strong>${this.currentScenario.paper} по ${this.formatMoney(this.currentScenario.startPrice)} ₽</strong></p>
+                
+                <!-- ОПЦИЯ 1: ДЕРЖАТЬ -->
+                <div class="action-type">
+                    <label>
+                        <input type="radio" name="action_${playerName}" value="hold" checked> 
+                        ✋ Держать (ничего не делать)
+                    </label>
+                </div>
+                
+                <!-- ОПЦИЯ 2: РЫНОЧНАЯ ПОКУПКА -->
+                <div class="action-type">
+                    <label>
+                        <input type="radio" name="action_${playerName}" value="market_buy"> 
+                        📈 Рыночная заявка: КУПИТЬ по ${this.formatMoney(this.currentScenario.startPrice)} ₽/шт
+                    </label>
+                    <div style="margin-left: 24px; margin-top: 8px;">
+                        <input 
+                            type="number" 
+                            name="count_${playerName}" 
+                            class="quantity-input"
+                            min="0" 
+                            max="${maxShares}" 
+                            value="0" 
+                            placeholder="Кол-во бумаг (макс ${maxShares})"
+                            data-player="${playerName}"
+                            data-type="market_buy"
+                            data-max="${maxShares}"
+                            data-price="${this.currentScenario.startPrice}"
+                        >
+                        <div class="input-error" id="error_count_${playerName}"></div>
+                        <p class="input-hint" style="color: #667eea; font-size: 0.9em; margin: 5px 0 0 0;">
+                            Стоимость: <strong id="cost_${playerName}">0 ₽</strong> из ${this.formatMoney(balance)} ₽
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- ОПЦИЯ 3: РЫНОЧНАЯ ПРОДАЖА (ШОРТ) -->
+                <div class="action-type">
+                    <label>
+                        <input type="radio" name="action_${playerName}" value="market_sell"> 
+                        📉 Рыночная заявка: ПРОДАТЬ (Шорт) по ${this.formatMoney(this.currentScenario.startPrice)} ₽/шт
+                    </label>
+                    <div style="margin-left: 24px; margin-top: 8px;">
+                        
+                        <!-- ИНФОРМАЦИЯ О НАЧАЛЬНОЙ ПОЗИЦИИ -->
+                        ${this.currentScenario.startPosition.count > 0 ? `
+                        <p style="background: #fff3e0; border-left: 3px solid #ff9800; padding: 8px; margin: 0 0 10px 0; font-size: 0.9em; border-radius: 3px;">
+                            📊 У вас есть начальная позиция: <strong>${this.currentScenario.startPosition.count} бумаг по ${this.formatMoney(this.currentScenario.startPosition.price)} ₽</strong>
+                            <br>Стоимость закрытия: <strong>${this.formatMoney(this.currentScenario.startPosition.count * this.currentScenario.startPrice)} ₽</strong>
+                            <br>Вы сможете продать макс: <strong>${this.calculateMaxShortSellable(playerName)} бумаг</strong> (чтобы оставить деньги на закрытие позиции)
+                        </p>
+                        ` : ''}
+                        
+                        <input 
+                            type="number" 
+                            name="count_sell_${playerName}" 
+                            class="quantity-input"
+                            min="0" 
+                            value="0" 
+                            placeholder="Кол-во бумаг для шорта"
+                            data-player="${playerName}"
+                            data-type="market_sell"
+                            data-max="${this.calculateMaxShortSellable(playerName)}"
+                            data-price="${this.currentScenario.startPrice}"
+                        >
+                        <div class="input-error" id="error_count_sell_${playerName}"></div>
+                        <p class="input-hint" style="color: #667eea; font-size: 0.9em; margin: 5px 0 0 0;">
+                            Выручка: <strong id="revenue_${playerName}">0 ₽</strong>
+                            ${this.currentScenario.startPosition.count > 0 ? `
+                            <br>Деньги на закрытие позиции: <strong id="funds_left_${playerName}">${this.formatMoney(this.getPlayerBalance(playerName) - this.currentScenario.startPosition.count * this.currentScenario.startPrice)} ₽</strong>
+                            ` : ''}
+                        </p>
+                    </div>
+                </div>
+
+                
+                <!-- ОПЦИЯ 4: ЛИМИТНАЯ ПОКУПКА -->
+                <div class="action-type">
+                    <label>
+                        <input type="radio" name="action_${playerName}" value="limit_buy"> 
+                        🎯 Лимитная заявка: КУПИТЬ по цене
+                    </label>
+                    <div style="margin-left: 24px; margin-top: 8px;">
+                        <div style="display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 0.9em; color: #666;">Цена за бумагу (₽):</label>
+                                <input 
+                                    type="number" 
+                                    name="limit_price_buy_${playerName}" 
+                                    class="price-input"
+                                    value="${this.currentScenario.startPrice}" 
+                                    min="1"
+                                    step="1"
+                                    placeholder="Цена"
+                                    data-player="${playerName}"
+                                    data-type="limit_buy"
+                                >
+                                <div class="input-error" id="error_limit_price_buy_${playerName}"></div>
+                            </div>
+                            <div style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 0.9em; color: #666;">Кол-во бумаг:</label>
+                                <input 
+                                    type="number" 
+                                    name="count_limit_buy_${playerName}" 
+                                    class="quantity-input"
+                                    min="0" 
+                                    value="0" 
+                                    placeholder="Кол-во"
+                                    data-player="${playerName}"
+                                    data-type="limit_buy"
+                                >
+                                <div class="input-error" id="error_count_limit_buy_${playerName}"></div>
+                            </div>
+                        </div>
+                        <p class="input-hint" style="color: #667eea; font-size: 0.9em; margin: 5px 0 0 0;">
+                            Макс. стоимость: <strong id="cost_limit_buy_${playerName}">0 ₽</strong> из ${this.formatMoney(balance)} ₽
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- ОПЦИЯ 5: ЛИМИТНАЯ ПРОДАЖА -->
+               <div class="action-type">
+                    <label>
+                        <input type="radio" name="action_${playerName}" value="limit_sell"> 
+                        🎯 Лимитная заявка: ПРОДАТЬ по цене
+                    </label>
+                    <div style="margin-left: 24px; margin-top: 8px;">
+                        
+                        <!-- ИНФОРМАЦИЯ О НАЧАЛЬНОЙ ПОЗИЦИИ -->
+                        ${this.currentScenario.startPosition.count > 0 ? `
+                        <p style="background: #fff3e0; border-left: 3px solid #ff9800; padding: 8px; margin: 0 0 10px 0; font-size: 0.9em; border-radius: 3px;">
+                            📊 У вас есть начальная позиция: <strong>${this.currentScenario.startPosition.count} бумаг</strong>
+                            <br>Стоимость закрытия: <strong>${this.formatMoney(this.currentScenario.startPosition.count * this.currentScenario.startPrice)} ₽</strong>
+                        </p>
+                        ` : ''}
+                        
+                        <div style="display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 0.9em; color: #666;">Цена за бумагу (₽):</label>
+                                <input 
+                                    type="number" 
+                                    name="limit_price_sell_${playerName}" 
+                                    class="price-input"
+                                    value="${this.currentScenario.startPrice}" 
+                                    min="1"
+                                    step="1"
+                                    placeholder="Цена"
+                                    data-player="${playerName}"
+                                    data-type="limit_sell"
+                                >
+                                <div class="input-error" id="error_limit_price_sell_${playerName}"></div>
+                            </div>
+                            <div style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 0.9em; color: #666;">Кол-во бумаг:</label>
+                                <input 
+                                    type="number" 
+                                    name="count_limit_sell_${playerName}" 
+                                    class="quantity-input"
+                                    min="0" 
+                                    value="0" 
+                                    placeholder="Кол-во"
+                                    data-player="${playerName}"
+                                    data-type="limit_sell"
+                                    data-max="${this.calculateMaxShortSellable(playerName)}"
+                                >
+                                <div class="input-error" id="error_count_limit_sell_${playerName}"></div>
+                            </div>
+                        </div>
+                        <p class="input-hint" style="color: #667eea; font-size: 0.9em; margin: 5px 0 0 0;">
+                            Выручка: <strong id="revenue_limit_sell_${playerName}">0 ₽</strong>
+                            ${this.currentScenario.startPosition.count > 0 ? `
+                            <br>Деньги на закрытие позиции: <strong id="funds_left_limit_sell_${playerName}">${this.formatMoney(this.getPlayerBalance(playerName) - this.currentScenario.startPosition.count * this.currentScenario.startPrice)} ₽</strong>
+                            ` : ''}
+                        </p>
+                    </div>
+                </div>
+        `;
 
             this.playerActionsContainer.innerHTML += formHTML;
         });
 
-        // Добавляем обработчик для проверки баланса при вводе
-        this.setupBalanceValidation();
+        // Инициализируем валидацию
+        this.setupAdvancedValidation();
     },
+    setupAdvancedValidation() {
+        const container = this.playerActionsContainer;
+
+        // === ОБРАБОТЧИКИ ДЛЯ ВСЕХ INPUT ПОЛЕЙ ===
+        container.querySelectorAll('input[type="number"]').forEach(input => {
+            // 1. ЗАПРЕТИТЬ ОТРИЦАТЕЛЬНЫЕ И НЕЦЕЛЫЕ ЧИСЛА
+            input.addEventListener('input', (e) => {
+                let value = e.target.value;
+
+                // Удаляем всё кроме цифр (и минус в начале)
+                value = value.replace(/[^\d]/g, '');
+                e.target.value = value;
+            });
+
+            // 2. ПРОВЕРКА ПРИ ИЗМЕНЕНИИ
+            input.addEventListener('change', (e) => {
+                this.validatePlayerInput(e.target);
+            });
+
+            // 3. LIVE КАЛЬКУЛЯЦИЯ СТОИМОСТИ/ВЫРУЧКИ
+            input.addEventListener('input', (e) => {
+                this.calculateTotalCost(e.target);
+            });
+        });
+
+        // === ОБРАБОТЧИКИ ДЛЯ RADIO BUTTONS ===
+        container.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const formDiv = e.target.closest('.player-action-form');
+                // Очищаем все ошибки при смене действия
+                formDiv.querySelectorAll('.input-error').forEach(err => err.textContent = '');
+            });
+        });
+    },
+    validatePlayerInput(input) {
+        const playerName = input.dataset.player;
+        const inputType = input.dataset.type;
+        const max = parseInt(input.dataset.max) || Infinity;
+        const price = parseInt(input.dataset.price) || 0;
+        let value = parseInt(input.value) || 0;
+        const balance = this.getPlayerBalance(playerName);
+        const errorDiv = document.getElementById(`error_${input.name}`);
+
+        if (!errorDiv) return;
+
+        errorDiv.textContent = '';
+        errorDiv.style.color = '#f44336';
+        errorDiv.style.fontSize = '0.85em';
+        errorDiv.style.marginTop = '4px';
+
+        // === РЫНОЧНАЯ ПОКУПКА ===
+        if (inputType === 'market_buy') {
+            if (value < 0) {
+                value = 0;
+                input.value = 0;
+                errorDiv.textContent = '❌ Отрицательное число недопустимо';
+                return;
+            }
+
+            if (value > max) {
+                input.value = max;
+                errorDiv.textContent = `❌ Максимум ${max} бумаг (ваш баланс: ${this.formatMoney(balance)} ₽)`;
+                return;
+            }
+
+            const totalCost = value * price;
+            if (totalCost > balance) {
+                const canBuy = Math.floor(balance / price);
+                input.value = canBuy;
+                errorDiv.textContent = `❌ Не хватает средств. Максимум ${canBuy} бумаг на ${this.formatMoney(balance)} ₽`;
+                return;
+            }
+        }
+
+        // === ЛИМИТНАЯ ПОКУПКА ===
+        if (inputType === 'limit_buy') {
+            if (value < 0) {
+                value = 0;
+                input.value = 0;
+                errorDiv.textContent = '❌ Отрицательное число недопустимо';
+                return;
+            }
+
+            // Получаем цену из соответствующего поля
+            const priceInput = document.querySelector(`input[name="limit_price_buy_${playerName}"]`);
+            const limitPrice = parseInt(priceInput?.value) || 0;
+
+            if (limitPrice <= 0) {
+                errorDiv.textContent = '❌ Укажите цену > 0';
+                return;
+            }
+
+            const totalCost = value * limitPrice;
+            if (totalCost > balance) {
+                const canBuy = Math.floor(balance / limitPrice);
+                input.value = canBuy;
+                errorDiv.textContent = `❌ При цене ${this.formatMoney(limitPrice)} ₽ можно купить максимум ${canBuy} бумаг`;
+                return;
+            }
+        }
+
+        // === ЛИМИТНАЯ ПРОДАЖА ===
+        if (inputType === 'limit_sell') {
+            const startPosition = this.currentScenario.startPosition;
+            const costToClose = startPosition.count * this.currentScenario.startPrice;
+
+            if (value < 0) {
+                value = 0;
+                input.value = 0;
+                errorDiv.textContent = '❌ Отрицательное число недопустимо';
+                return;
+            }
+
+            // Если есть начальная позиция, проверяем можно ли продать
+            if (startPosition.count > 0 && input.name.includes('count_limit_sell')) {
+                const priceInput = document.querySelector(`input[name="limit_price_sell_${playerName}"]`);
+                const limitPrice = parseInt(priceInput?.value) || 0;
+                const revenue = value * limitPrice;
+                const balanceAfterRevenue = balance + revenue;
+                const fundsLeft = balanceAfterRevenue - costToClose;
+
+                if (fundsLeft < 0) {
+                    const maxCanSell = Math.floor((balance + balance - costToClose) / limitPrice);
+                    input.value = Math.max(0, maxCanSell);
+                    errorDiv.textContent = `❌ При цене ${this.formatMoney(limitPrice)} ₽ и продаже ${value} бумаг не останется денег на закрытие позиции. Максимум ${Math.max(0, maxCanSell)} бумаг.`;
+                    return;
+                }
+
+                // Обновляем информацию о деньгах
+                const fundsLeftDiv = document.getElementById(`funds_left_limit_sell_${playerName}`);
+                if (fundsLeftDiv) {
+                    fundsLeftDiv.textContent = this.formatMoney(fundsLeft) + ' ₽';
+                }
+            }
+        }
+
+        // === РЫНОЧНАЯ ПРОДАЖА (ШОРТ) ===
+        if (inputType === 'market_sell') {
+            const maxShortable = this.calculateMaxShortSellable(playerName);
+            const startPosition = this.currentScenario.startPosition;
+            const costToClose = startPosition.count * this.currentScenario.startPrice;
+
+            if (value < 0) {
+                value = 0;
+                input.value = 0;
+                errorDiv.textContent = '❌ Отрицательное число недопустимо';
+                return;
+            }
+
+            if (value > maxShortable) {
+                input.value = maxShortable;
+
+                if (startPosition.count > 0) {
+                    errorDiv.textContent = `❌ Если продать ${value} бумаг, не останется денег на закрытие начальной позиции (${startPosition.count} шт по ${this.formatMoney(this.currentScenario.startPrice)} ₽). Максимум ${maxShortable} бумаг.`;
+                } else {
+                    errorDiv.textContent = `❌ Максимум ${maxShortable} бумаг`;
+                }
+                return;
+            }
+
+            // Обновляем информацию о оставшихся деньгах
+            const revenue = value * this.currentScenario.startPrice;
+            const balanceAfterRevenue = balance + revenue;
+            const fundsLeftForClose = balanceAfterRevenue - costToClose;
+
+            const fundsLeftDiv = document.getElementById(`funds_left_${playerName}`);
+            if (fundsLeftDiv && startPosition.count > 0) {
+                fundsLeftDiv.textContent = this.formatMoney(fundsLeftForClose) + ' ₽';
+
+                if (fundsLeftForClose < 0) {
+                    errorDiv.textContent = `⚠️ Недостаточно средств на закрытие позиции. Нужно ${this.formatMoney(costToClose)} ₽, будет ${this.formatMoney(balanceAfterRevenue)} ₽`;
+                }
+            }
+        }
+
+    },
+    calculateMaxShortSellable(playerName) {
+        const balance = this.getPlayerBalance(playerName);
+        const startPrice = this.currentScenario.startPrice;
+        const startPosition = this.currentScenario.startPosition;
+
+        // Если начальная позиция 0 или отрицательная (уже шорт) — можно продавать без ограничений
+        if (startPosition.count <= 0) {
+            // Можно продать как угодно много (уже шортим)
+            // Ограничение только по логике: не более 1000 бумаг (разумный предел)
+            return 1000;
+        }
+
+        // Если есть ДЛИННАЯ позиция (startPosition.count > 0):
+        // Надо оставить денег на закрытие этой позиции
+        // cost_to_close = startPosition.count × startPrice
+
+        const costToClose = startPosition.count * startPrice;
+
+        // Макс можем оставить = баланс - стоимость закрытия
+        const maxMoneyToSpendOnShort = balance - costToClose;
+
+        if (maxMoneyToSpendOnShort <= 0) {
+            // Недостаточно денег даже на закрытие текущей позиции
+            return 0;
+        }
+
+        // Макс бумаг для шорта = деньги / начальная цена
+        const maxShortable = Math.floor(maxMoneyToSpendOnShort / startPrice);
+
+        return Math.max(0, maxShortable);
+    },
+    calculateTotalCost(input) {
+        const playerName = input.dataset.player;
+        const inputType = input.dataset.type;
+        const price = parseInt(input.dataset.price) || 0;
+        const value = parseInt(input.value) || 0;
+
+        // === РЫНОЧНАЯ ПОКУПКА ===
+        if (inputType === 'market_buy') {
+            const totalCost = value * price;
+            const costDiv = document.getElementById(`cost_${playerName}`);
+            if (costDiv) {
+                costDiv.textContent = this.formatMoney(totalCost) + ' ₽';
+            }
+        }
+
+        // === РЫНОЧНАЯ ПРОДАЖА ===
+        if (inputType === 'market_sell') {
+            const totalRevenue = value * price;
+            const revenueDiv = document.getElementById(`revenue_${playerName}`);
+            if (revenueDiv) {
+                revenueDiv.textContent = this.formatMoney(totalRevenue) + ' ₽';
+            }
+
+            // Обновляем деньги на закрытие позиции
+            const startPosition = this.currentScenario.startPosition;
+            if (startPosition.count > 0) {
+                const costToClose = startPosition.count * this.currentScenario.startPrice;
+                const balanceAfterRevenue = this.getPlayerBalance(playerName) + totalRevenue;
+                const fundsLeft = balanceAfterRevenue - costToClose;
+
+                const fundsLeftDiv = document.getElementById(`funds_left_${playerName}`);
+                if (fundsLeftDiv) {
+                    fundsLeftDiv.textContent = this.formatMoney(fundsLeft) + ' ₽';
+                }
+            }
+        }
+
+        // === ЛИМИТНАЯ ПОКУПКА ===
+        if (inputType === 'limit_buy' && input.name.includes('count_limit_buy')) {
+            const priceInput = document.querySelector(`input[name="limit_price_buy_${playerName}"]`);
+            const limitPrice = parseInt(priceInput?.value) || 0;
+            const totalCost = value * limitPrice;
+            const costDiv = document.getElementById(`cost_limit_buy_${playerName}`);
+            if (costDiv) {
+                costDiv.textContent = this.formatMoney(totalCost) + ' ₽';
+            }
+        }
+
+        // === ПЕРЕСЧЁТ ПРИ ИЗМЕНЕНИИ ЦЕНЫ В ЛИМИТНОЙ ПОКУПКЕ ===
+        if (inputType === 'limit_buy' && input.name.includes('limit_price_buy')) {
+            const countInput = document.querySelector(`input[name="count_limit_buy_${playerName}"]`);
+            const count = parseInt(countInput?.value) || 0;
+            const totalCost = count * value;
+            const costDiv = document.getElementById(`cost_limit_buy_${playerName}`);
+            if (costDiv) {
+                costDiv.textContent = this.formatMoney(totalCost) + ' ₽';
+            }
+        }
+
+// === ЛИМИТНАЯ ПРОДАЖА (КОЛИЧЕСТВО) ===
+        if (inputType === 'limit_sell' && input.name.includes('count_limit_sell')) {
+            const priceInput = document.querySelector(`input[name="limit_price_sell_${playerName}"]`);
+            const limitPrice = parseInt(priceInput?.value) || 0;
+            const totalRevenue = value * limitPrice;
+            const revenueDiv = document.getElementById(`revenue_limit_sell_${playerName}`);
+            if (revenueDiv) {
+                revenueDiv.textContent = this.formatMoney(totalRevenue) + ' ₽';
+            }
+
+            // Обновляем деньги на закрытие
+            const startPosition = this.currentScenario.startPosition;
+            if (startPosition.count > 0) {
+                const costToClose = startPosition.count * this.currentScenario.startPrice;
+                const balanceAfterRevenue = this.getPlayerBalance(playerName) + totalRevenue;
+                const fundsLeft = balanceAfterRevenue - costToClose;
+
+                const fundsLeftDiv = document.getElementById(`funds_left_limit_sell_${playerName}`);
+                if (fundsLeftDiv) {
+                    fundsLeftDiv.textContent = this.formatMoney(fundsLeft) + ' ₽';
+                }
+            }
+        }
+
+        // === ЛИМИТНАЯ ПРОДАЖА (ЦЕНА) ===
+        if (inputType === 'limit_sell' && input.name.includes('limit_price_sell')) {
+            const countInput = document.querySelector(`input[name="count_limit_sell_${playerName}"]`);
+            const count = parseInt(countInput?.value) || 0;
+            const totalRevenue = count * value;
+            const revenueDiv = document.getElementById(`revenue_limit_sell_${playerName}`);
+            if (revenueDiv) {
+                revenueDiv.textContent = this.formatMoney(totalRevenue) + ' ₽';
+            }
+
+            // Обновляем деньги на закрытие
+            const startPosition = this.currentScenario.startPosition;
+            if (startPosition.count > 0) {
+                const costToClose = startPosition.count * this.currentScenario.startPrice;
+                const balanceAfterRevenue = this.getPlayerBalance(playerName) + totalRevenue;
+                const fundsLeft = balanceAfterRevenue - costToClose;
+
+                const fundsLeftDiv = document.getElementById(`funds_left_limit_sell_${playerName}`);
+                if (fundsLeftDiv) {
+                    fundsLeftDiv.textContent = this.formatMoney(fundsLeft) + ' ₽';
+                }
+            }
+        }
+
+
+
+        // === ПЕРЕСЧЁТ ПРИ ИЗМЕНЕНИИ ЦЕНЫ В ЛИМИТНОЙ ПРОДАЖЕ ===
+        if (inputType === 'limit_sell' && input.name.includes('limit_price_sell')) {
+            const countInput = document.querySelector(`input[name="count_limit_sell_${playerName}"]`);
+            const count = parseInt(countInput?.value) || 0;
+            const totalRevenue = count * value;
+            const revenueDiv = document.getElementById(`revenue_limit_sell_${playerName}`);
+            if (revenueDiv) {
+                revenueDiv.textContent = this.formatMoney(totalRevenue) + ' ₽';
+            }
+        }
+    },
+
 
     setupBalanceValidation() {
         this.playerActionsContainer.querySelectorAll('input[type="number"]').forEach(input => {
@@ -409,19 +872,43 @@ const Level2 = {
 
     // === РАСКРЫТИЕ БУДУЩЕГО И РАСЧЁТЫ ===
     revealFutureAndCalculate() {
+        // ПРОВЕРЯЕМ ВСЕ ДЕЙСТВИЯ ПО ИГРОКАМ
+        const container = this.playerActionsContainer;
+        let hasErrors = false;
+
+        container.querySelectorAll('.player-action-form').forEach(form => {
+            const errors = form.querySelectorAll('.input-error');
+            errors.forEach(err => {
+                if (err.textContent.trim()) {
+                    hasErrors = true;
+                }
+            });
+        });
+
+        if (hasErrors) {
+            // Показываем красивое сообщение об ошибке
+            const errorMsg = document.createElement('div');
+            errorMsg.style.cssText = `
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border-left: 4px solid #c62828;
+        `;
+            errorMsg.textContent = '❌ Пожалуйста, исправьте ошибки в формах перед тем как раскрыть будущее';
+            container.insertBefore(errorMsg, container.firstChild);
+
+            setTimeout(() => {
+                errorMsg.remove();
+            }, 5000);
+
+            return;
+        }
+
+        // Если ошибок нет, продолжаем обычный расчёт
         this.collectPlayerActions();
-        this.animateToEndImage();
-
-        setTimeout(() => {
-            this.calculateResults();
-
-            if (this.revealFutureBtn) {
-                this.revealFutureBtn.style.display = 'none';
-            }
-            if (this.nextCaseBtn) {
-                this.nextCaseBtn.style.display = 'block';
-            }
-        }, 1500);
+        this.calculateResults();
     },
 
     collectPlayerActions() {

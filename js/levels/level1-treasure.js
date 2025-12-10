@@ -36,9 +36,15 @@ const Level1 = {
         { x: 90, y: 75, w: 12, h: 12, artifactId: 'snowglob', interaction: 'event', requiredFlag: 'Свет', trigger: 'dblclick' }
       ],
       hintTexts: [
-        'Общий принцип: области в которых находятся предметы при наведение подсвечиваются, но заметить это трудно.' +
-        'Нужно сделать некоторые действия, чтобы собрать все 7 предметов.',
-        'Подозрительные области: сугроб перед ёлкой, двери, яркие предметы, тёмные.',
+          'Кто-то оставил санки на улице',
+          'Ты не сможешь найти перчатки без маминой помощи',
+          'Снеговик убежал, оставив свой нос в снегу',
+          'На ёлку можно вешать много разных вещей, но шары самые популярные',
+          'Вечером все празднуют и не слышат стук в дверь, да и звонок не сильно помогает',
+          'И как же без звезды на вершине ёлки?',
+        'Включенный свет в окне поможет найти спрятанные вещи',
+        'Мама удивительный человек, если её попросить найти что-то, то она выглянув из окна сразу это увидит, но не факт, что для тебя оно действительно там',
+          'Как буд-то в тени под ёлкой что-то есть... А нет, это просто снег. Тут слишком темно'
       ],
       correctOrder: ['sanok','rukav','nos','sharok','zvezda','gir','snowglob']
     },
@@ -77,8 +83,15 @@ const Level1 = {
           { x: 58, y: 70, w: 6, h: 6, artifactId: 'snowglob', interaction: 'event', requiredFlag: 'Свет', trigger: 'dblclick' }
       ],
       hintTexts: [
-          'Во дворе спрятались музыкальные предметы: часть зарыта в снег, часть висит на гирлянде или прячется на крыше.',
-          'Ищи странные сугробы рядом со снеговиком и ёлкой, гирлянду над дверью, гребень крыши и яркий блик на снегу справа.'
+          'Под маленькой ёлкой кто-то оставил музыкальную ноту',
+          'Перчатки не найти без маминой помощи',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          ''
       ],
       correctOrder: ['note','pipe','bell','violin','songbook','rukav','snowglob']
     },
@@ -137,7 +150,6 @@ const Level1 = {
     this.startPlayBtn = document.getElementById('start-play');
     this.closeStartBtn = document.getElementById('close-start');
     this.currentPlayerLabel = document.getElementById('current-player');
-    this.playerButtonsContainer = document.getElementById('player-list-buttons');
     this.hintPanel = document.getElementById('hint-panel');
     this.hintToggle = document.getElementById('hint-toggle');
     this.hintText = document.getElementById('hint-text');
@@ -149,7 +161,10 @@ const Level1 = {
     this.finalText = document.getElementById('final-text');
     this.finalToMenu = document.getElementById('to-menu');
     this.backBtn = document.getElementById('back-btn');
-
+      this.hintNext = document.getElementById('hint-next');
+      if (this.hintNext) {
+          this.hintNext.addEventListener('click', () => this.nextHint && this.nextHint());
+      }
     // state
     this.selectedPlayer = null;
     this.hintLevel = 0;
@@ -207,8 +222,12 @@ const Level1 = {
     }
 
     // Подсказки
-    if (this.hintToggle) this.hintToggle.addEventListener('click', () => this.toggleHint && this.toggleHint());
-    if (this.hintNext) this.hintNext.addEventListener('click', () => this.nextHint && this.nextHint());
+      if (this.hintToggle) {
+          this.hintToggle.addEventListener('click', () => {
+              this.toggleHint && this.toggleHint();
+              this.showSmartHint(); // ← ДОБАВИТЬ
+          });
+      }    if (this.hintNext) this.hintNext.addEventListener('click', () => this.nextHint && this.nextHint());
     if (this.hintReset) this.hintReset.addEventListener('click', () => this.resetHints && this.resetHints());
 
     // Кнопки управления уровнем
@@ -283,6 +302,102 @@ const Level1 = {
        container.appendChild(btn);
      });
    },
+    showSmartHint() {
+        if (!this.scene) return;
+
+        // Шаг 1: Найти первый не собранный артефакт
+        const firstNotCollected = this.scene.artifacts.find(
+            artifact => !this.collected[artifact.id]
+        );
+
+        if (!firstNotCollected) {
+            // Все предметы собраны!
+            if (this.hintText) {
+                this.hintText.textContent = '✅ Вы собрали все предметы! Расставьте их в правильном порядке.';
+            }
+            this.clearHotspotHighlight();
+            return;
+        }
+
+        // Шаг 2: Найти зону для этого артефакта
+        const artifactZone = this.scene.zones.find(
+            zone => zone.artifactId === firstNotCollected.id
+        );
+
+        if (!artifactZone) {
+            console.warn('❌ Zone not found for artifact:', firstNotCollected.id);
+            return;
+        }
+
+        // Шаг 3: Найти индекс артефакта в списке (номер подсказки)
+        const artifactIndex = this.scene.artifacts.findIndex(
+            a => a.id === firstNotCollected.id
+        );
+
+        // Шаг 4: Показать подсказку (по порядку артефактов)
+        if (this.scene.hintTexts && this.scene.hintTexts[artifactIndex]) {
+            if (this.hintText) {
+                this.hintText.textContent = this.scene.hintTexts[artifactIndex];
+            }
+        }
+
+        // Шаг 5: Подсветить зону с предметом
+        this.highlightHotspot(artifactZone);
+
+        console.log(`💡 Подсказка для ${artifactIndex + 1}-го предмета: ${firstNotCollected.name}`);
+    },
+
+    /**
+     * Подсвечивает горячую точку (зону с предметом)
+     * Добавляет класс .highlighted для CSS эффекта
+     */
+    highlightHotspot(zone) {
+        // Сначала очищаем все предыдущие подсветки
+        this.clearHotspotHighlight();
+
+        if (!this.sceneEl) return;
+
+        // Находим все hotspot элементы
+        const hotspots = this.sceneEl.querySelectorAll('.hotspot');
+
+        hotspots.forEach(hotspot => {
+            const zoneX = parseFloat(hotspot.style.left);
+            const zoneY = parseFloat(hotspot.style.top);
+            const zoneW = parseFloat(hotspot.style.width);
+            const zoneH = parseFloat(hotspot.style.height);
+
+            // Проверяем совпадение (с небольшой точностью)
+            if (
+                Math.abs(zoneX - zone.x) < 0.5 &&
+                Math.abs(zoneY - zone.y) < 0.5 &&
+                Math.abs(zoneW - zone.w) < 0.5 &&
+                Math.abs(zoneH - zone.h) < 0.5
+            ) {
+                hotspot.classList.add('highlighted');
+            }
+        });
+    },
+
+    /**
+     * Очищает все подсветки
+     */
+    clearHotspotHighlight() {
+        if (!this.sceneEl) return;
+        const highlighted = this.sceneEl.querySelectorAll('.hotspot.highlighted');
+        highlighted.forEach(el => el.classList.remove('highlighted'));
+    },
+
+
+
+    nextHint() {
+        if (!this.scene || !this.scene.hintTexts) return;
+        const hints = this.scene.hintTexts;
+        this.hintLevel = (this.hintLevel + 1) % hints.length;
+        if (this.hintText) {
+            this.hintText.textContent = hints[this.hintLevel];
+        }
+        this.saveHintState();
+    },
 
    showStart(mode) {
      // mode: 'initial' (первый вход — отмена ведёт на главную) или 'info' (инструкция — отмена просто закрывает)
@@ -305,56 +420,7 @@ const Level1 = {
    },
    hideStart() { if (this.startModal) this.startModal.style.display = 'none'; },
 
-   // После renderScene и createInventory — восстановить собранные предметы из локалки
-   loadSavedCollected() {
-     if (!this.sceneEl || !this.inventoryEl) return;
-    const playerKey = this.selectedPlayer || Storage.load('level1_currentPlayer') || 'guest';
-    const sceneId = this.scene && this.scene.id ? this.scene.id : 'scene_1';
-    const saveKey = `level1_${sceneId}_${playerKey}_collected`;
-    const saved = Storage.load(saveKey);
-     if (!saved || !Array.isArray(saved) || saved.length === 0) return;
 
-     // Сначала убедимся, что слоты созданы
-     if (!Array.from(this.inventoryEl.children).length) this.createInventory();
-
-     // очистим текущие состояния коллекции (не трогаем selectedPlayer)
-     this.inventory = new Array(7).fill(null);
-     this.collected = this.collected || {};
-
-     // Заполняем слоты в порядке saved (saved[0] -> слот 0 и т.д.)
-     for (let i = 0; i < saved.length && i < 7; i++) {
-       const id = saved[i];
-       if (!id) continue;
-       const art = this.scene.artifacts.find(a => a.id === id);
-       // Записываем в внутренний массив и DOM в тот же индекс
-       this.inventory[i] = id;
-       this.collected[id] = true;
-       const slot = this.inventoryEl.children[i];
-       if (slot) {
-         slot.dataset.artifact = id;
-         slot.innerHTML = `<div style="text-align:center"><div style="font-size:30px">${art ? art.icon : '?'}</div><div style="font-size:12px">${art ? art.name : id}</div></div>`;
-         slot.classList.add('collected');
-       }
-       // деактивировать соответствующую зону на сцене, если она есть
-       try {
-         // используем селектор по data-artifact
-         const selector = `.hotspot[data-artifact="${id}"]`;
-         const zone = this.sceneEl.querySelector(selector);
-         if (zone) {
-           zone.style.pointerEvents = 'none';
-           zone.style.opacity = '0.25';
-           zone.classList.add('revealed');
-         }
-       } catch (e) {
-         // silent
-       }
-     }
-
-     // если восстановлено 7 предметов — сразу перейти в режим упорядочивания
-     if (Object.keys(this.collected).length === 7) {
-       setTimeout(() => this.beginOrdering(), 300);
-     }
-   },
 
   // helper: ключ прогресса для текущего игрока
   progressKey() {
@@ -417,8 +483,7 @@ const Level1 = {
     this.hintLevel = 0;
     this.orderMode = false;
     this.selectedSlotIndex = null;
-    if (this.hintPanel) this.hintPanel.style.display = 'none';
-
+      this.showSmartHint();
     // Попытка загрузить прогресс (чтобы определить сцену и collected)
     const saved = this.loadSavedProgress();
     if (saved && saved.sceneId) {
@@ -730,7 +795,7 @@ const Level1 = {
              if (el.dataset.flag === 'Свет') {
                  this.flags[el.dataset.flag] = true;
                  el.style.boxShadow = '0 0 18px 4px rgba(255,200,50,0.8)'; // голубая подсветка
-                 this.puzzleInfo.textContent = 'Фонарь включён! Теперь можно искать в темных местах.';
+                 this.puzzleInfo.textContent = 'Свет включён! Теперь можно искать в темных местах.';
                  setTimeout(() => el.style.boxShadow = '', 3000);
              }
 
@@ -956,6 +1021,7 @@ const Level1 = {
      // short tooltip-like info
      setTimeout(() => { this.puzzleInfo.textContent = `Предмет "${art.name}" добавлен в инвентарь.`; }, 50);
      // when all collected -> enable ordering
+       this.showSmartHint();
      if (Object.keys(this.collected).length === 7) {
        setTimeout(() => this.beginOrdering(), 400);
      }

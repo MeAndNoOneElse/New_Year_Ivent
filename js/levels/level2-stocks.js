@@ -215,13 +215,29 @@ const Level2 = {
     resumeSession(session) {
         console.log('🔄 Загрузка сохранённой сессии...');
 
-        // Восстанавливаем состояние игры
+        // 1. Восстанавливаем состояние игры
         this.gamePlayers = session.gamePlayers;
         this.currentRound = session.currentRound;
         this.usedScenarios = session.usedScenarios || [];
         this.sessionId = session.sessionId || Date.now().toString();
 
-        // Восстанавливаем балансы каждого игрока
+        // 2. ✅ КРИТИЧНО: Восстанавливаем ТЕКУЩИЙ СЦЕНАРИЙ ПО ID
+        // Это нужно чтобы startPosition был заполнен!
+        if (session.currentScenarioId) {
+            const scenario = LEVEL2_SCENARIOS.find(s => s.id === session.currentScenarioId);
+            if (scenario) {
+                this.currentScenario = scenario;
+                console.log(`✅ Сценарий загружен: ${scenario.paper} (ID: ${scenario.id})`);
+            }
+        }
+
+        // 3. На всякий случай fallback: если currentScenario не найден
+        if (!this.currentScenario && this.currentRound < this.totalRounds) {
+            console.warn('⚠️ Сценарий не найден, берём следующий...');
+            this.currentScenario = this.getNextScenario();
+        }
+
+        // 4. Восстанавливаем балансы каждого игрока
         if (session.playerBalances) {
             Object.entries(session.playerBalances).forEach(([player, balance]) => {
                 Storage.save(`level2_balance_${player}`, balance);
@@ -229,17 +245,19 @@ const Level2 = {
             });
         }
 
-        console.log(`✅ Сессия загружена. Раунд ${this.currentRound + 1} / 5`);
+        console.log(`✅ Сессия загружена. Раунд ${this.currentRound + 1} / ${this.totalRounds}`);
 
-        // Продолжаем игру
+        // 5. Продолжаем игру
         if (this.currentRound >= this.totalRounds) {
             // Игра уже закончена, показываем финальные результаты
             this.showFinalResults();
         } else {
-            // Продолжаем с текущего раунда
-            this.nextScenario();
+            // ✅ ИСПРАВЛЕНИЕ: Вызываем renderScenario напрямую
+            // (а не nextScenario, чтобы не перетирать currentScenario)
+            this.renderScenario();
         }
     },
+
 
     showSessionResumeOption(session) {
         this.showPlayerSelection();
@@ -261,7 +279,11 @@ const Level2 = {
     },
 
     renderScenario() {
-        this.currentScenario = this.getNextScenario();
+        // ✅ ИСПРАВЛЕНИЕ: Если сценарий уже установлен (из resumeSession),
+        // не перетираем его и не пересчитываем startPosition
+        if (!this.currentScenario) {
+            this.currentScenario = this.getNextScenario();
+        }
 
         if (!this.currentScenario) {
             this.showFinalResults();
@@ -277,34 +299,38 @@ const Level2 = {
         // Показываем информацию о сценарии
         if (this.scenarioInfo) {
             this.scenarioInfo.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 30px;">
-          <div style="flex: 1;">
-            <h3>${this.currentScenario.paper}</h3>
-            <p><strong>Период: </strong> ${this.currentScenario.startDate} → ${this.currentScenario.endDate}</p>
-            <p><strong>Начальная цена: </strong> ${this.formatMoney(this.currentScenario.startPrice)} ₽</p>
-            <p><strong>Начальная позиция: </strong>${this.currentScenario.startPosition.count} бумаг по ${this.formatMoney(this.currentScenario.startPosition.price)} ₽</p>
-
-            <p><strong>Новость:</strong> ${this.currentScenario.news}</p>
-            <p><strong>Анализ:</strong> ${this.currentScenario.analysis}</p>
-          </div>
-          
-        </div>
-        <div style="flex: 0 0 300px;">
-            <img src="${this.currentScenario.startImage}" alt="Начальный график" style="width: 100%; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-          </div>
-      `;
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 300px;">
+                    <h3>📰 Новость</h3>
+                    <p>${this.currentScenario.news}</p>
+                    
+                    <h3>🔍 Анализ</h3>
+                    <p>${this.currentScenario.analysis}</p>
+                    
+                    <h3>📊 Период торговли</h3>
+                    <p>От: ${this.currentScenario.startDate}</p>
+                    <p>До: ${this.currentScenario.endDate}</p>
+                </div>
+                <div style="flex: 0 0 350px;">
+                    <img 
+                        src="${this.currentScenario.startImage}" 
+                        style="width: 100%; max-height: 250px; border-radius: 6px; object-fit: cover;"
+                        onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22350%22 height=%22250%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22350%22 height=%22250%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22%3EИзображение не найдено%3C/text%3E%3C/svg%3E'"
+                        alt="Сценарий">
+                    <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                        💰 Цена: ${this.formatMoney(this.currentScenario.startPrice)} ₽<br>
+                        📈 Min/Max: ${this.formatMoney(this.currentScenario.minPrice)}-${this.formatMoney(this.currentScenario.maxPrice)} ₽
+                    </p>
+                </div>
+            </div>
+        `;
         }
 
-        // Рендерим форму для каждого игрока
+        // Очищаем старые формы и увеличиваем раунд
+        this.currentRound++;
+
+        // Отрисовываем формы действий игроков
         this.renderPlayerActionForms();
-
-        // Показываем кнопку "Узнать будущее"
-        if (this.revealFutureBtn) {
-            this.revealFutureBtn.style.display = 'block';
-        }
-        if (this.nextCaseBtn) {
-            this.nextCaseBtn.style.display = 'none';
-        }
     },
 
     renderPlayerActionForms() {
@@ -912,6 +938,21 @@ const Level2 = {
         // Если ошибок нет, продолжаем обычный расчёт
         this.collectPlayerActions();
         this.calculateResults();
+        const sessionData = {
+            gamePlayers: this.gamePlayers,
+            currentRound: this.currentRound,
+            usedScenarios: this.usedScenarios,
+            currentScenarioId: this.currentScenario.id,  // ← ВАЖНО: сохраняем ID
+            sessionId: this.sessionId,
+            playerBalances: {}
+        };
+
+        this.gamePlayers.forEach(player => {
+            sessionData.playerBalances[player] = this.getPlayerBalance(player);
+        });
+
+        Storage.save('level2_session', sessionData);
+        console.log('💾 Сессия сохранена после раскрытия будущего');
     },
 
     collectPlayerActions() {
@@ -1055,6 +1096,24 @@ const Level2 = {
         }
 
         this.renderScenario();
+
+        // ✅ ДОБАВИТЬ: Сохраняем ID текущего сценария
+        const sessionData = {
+            gamePlayers: this.gamePlayers,
+            currentRound: this.currentRound,
+            usedScenarios: this.usedScenarios,
+            currentScenarioId: this.currentScenario.id,  // ← ВАЖНО: сохраняем ID
+            sessionId: this.sessionId,
+            playerBalances: {}
+        };
+
+        // Сохраняем балансы каждого игрока
+        this.gamePlayers.forEach(player => {
+            sessionData.playerBalances[player] = this.getPlayerBalance(player);
+        });
+
+        Storage.save('level2_session', sessionData);
+        console.log('💾 Сессия сохранена (ID сценария: ' + this.currentScenario.id + ')');
     },
 
     // === ФИНАЛЬНЫЕ РЕЗУЛЬТАТЫ ===

@@ -3,9 +3,9 @@ const Level1 = {
   // Сцены — 3 реализации, у каждой 7 артефактов и набор зон (проще: зоны с позициями и типом взаимодействия)
   scenes: [
     {
-      id: 'yard',
+      id: 'scene_1',
       name: 'Новогодний двор',
-      bg: 'url("../assets/images/scene-yard.jpg")',
+      bg: 'url("../assets/images/lvl_1/scene-yard.jpg")',
       mechanic: 'поменять местами',
       artifacts: [
         { id: 'sanok', name: 'Санки', icon: '🛷', letter: 'С' },
@@ -42,66 +42,87 @@ const Level1 = {
       ],
       correctOrder: ['sanok','rukav','nos','sharok','zvezda','gir','snowglob']
     },
-    // {
-    //   id: 'square',
-    //   name: 'Новогодняя площадь',
-    //   bg: 'url("../assets/images/scene-square.jpg")',
-    //   mechanic: 'push', // вариант B: "толкание" выбранного предмета стрелками
-    //   artifacts: [
-    //     { id: 'present', name: 'Подарок', icon: '🎫', letter: 'П' },
-    //     { id: 'cacao', name: 'Какао', icon: '☕', letter: 'К' },
-    //     { id: 'statue', name: 'Лёд-скульптура', icon: '🧊', letter: 'Л' },
-    //     { id: 'mic', name: 'Сценический микрофон', icon: '🎤', letter: 'С' },
-    //     { id: 'topper', name: 'Ёлочный топпер', icon: '⭐', letter: 'Т' },
-    //     { id: 'lantern', name: 'Небесный фонарик', icon: '🏮', letter: 'Н' },
-    //     { id: 'fire', name: 'Фейерверк', icon: '🎆', letter: 'Ф' }
-    //   ],
-    //   zones: [
-    //     { x: 22, y: 60, w: 12, h: 12, artifactId: 'present', interaction: 'click' },
-    //     { x: 34, y: 44, w: 12, h: 12, artifactId: 'cacao', interaction: 'hover' },
-    //     { x: 52, y: 22, w: 14, h: 14, artifactId: 'statue', interaction: 'longpress' },
-    //     { x: 62, y: 38, w: 12, h: 12, artifactId: 'mic', interaction: 'click' },
-    //     { x: 46, y: 28, w: 12, h: 12, artifactId: 'topper', interaction: 'dblclick' },
-    //     { x: 74, y: 18, w: 12, h: 12, artifactId: 'lantern', interaction: 'longpress' },
-    //     { x: 82, y: 62, w: 12, h: 12, artifactId: 'fire', interaction: 'dblclick' }
-    //   ],
-    //   hintTexts: [
-    //     'Осмотритесь: лавки, каток и сцена — места для поиска.',
-    //     'Подсветим подозрительные палатки на короткое время.',
-    //     'Спойлер: удержите на ледяной скульптуре и дважды кликните по ёлке.'
-    //   ],
-    //   correctOrder: ['present','cacao','statue','mic','topper','lantern','fire']
-    // },
-    // {
-    //   id: 'room',
-    //   name: 'Семейная комната',
-    //   bg: 'url("../assets/images/scene-room.jpg")',
-    //   mechanic: 'carousel', // вариант C: кольцевая карусель колесом/стрелками
-    //   artifacts: [
-    //     { id: 'album', name: 'Фотоальбом', icon: '📕', letter: 'Ф' },
-    //     { id: 'letter', name: 'Письмо Деду Морозу', icon: '✉️', letter: 'П' },
-    //     { id: 'mandar', name: 'Мандарин', icon: '🍊', letter: 'М' },
-    //     { id: 'candy', name: 'Конфета', icon: '🍬', letter: 'К' },
-    //     { id: 'blanket', name: 'Свернутый плед', icon: '🧣', letter: 'С' },
-    //     { id: 'photo', name: 'Шар-игрушка с фото', icon: '🧸', letter: 'Ш' },
-    //     { id: 'alarm', name: 'Будильник до полуночи', icon: '⏰', letter: 'Б' }
-    //   ],
-    //   zones: [
-    //     { x: 18, y: 34, w: 12, h: 12, artifactId: 'album', interaction: 'hover' },
-    //     { x: 44, y: 54, w: 12, h: 12, artifactId: 'letter', interaction: 'click' },
-    //     { x: 36, y: 38, w: 10, h: 10, artifactId: 'mandar', interaction: 'click' },
-    //     { x: 58, y: 46, w: 10, h: 10, artifactId: 'candy', interaction: 'click' },
-    //     { x: 24, y: 66, w: 12, h: 12, artifactId: 'blanket', interaction: 'longpress' },
-    //     { x: 66, y: 28, w: 12, h: 12, artifactId: 'photo', interaction: 'dblclick' },
-    //     { x: 74, y: 56, w: 10, h: 10, artifactId: 'alarm', interaction: 'longpress' }
-    //   ],
-    //   hintTexts: [
-    //     'В гостиной обращайте внимание на стол, полку и ёлку.',
-    //     'Мы можем подсветить окна с предметами на пару секунд.',
-    //     'Спойлер: дважды кликните на ёлку, удержание на кресле даст ещё один предмет.'
-    //   ],
-    //   correctOrder: ['letter','mandar','candy','blanket','album','photo','alarm']
-    // }
+    {
+      id: 'scene_2',
+      name: 'Новогодний двор — музыка',
+      bg: 'url("../assets/images/lvl_1/scene-square.png")',
+      mechanic: 'поменять местами',
+      artifacts: [
+          { id: 'note',     name: 'Нота',         icon: '🎵', letter: 'Н' },
+          { id: 'rukav',     name: 'Перчатки',      icon: '🧤', letter: 'П' },
+          { id: 'pipe',     name: 'Дудочка',      icon: '🪈', letter: 'Д' },
+          { id: 'bell',     name: 'Колокольчик',  icon: '🔔', letter: 'К' },
+          { id: 'violin',   name: 'Барабан',      icon: '🥁', letter: 'С' },
+          { id: 'songbook', name: 'Песенник',     icon: '📖', letter: 'П' },
+          { id: 'snowglob',  name: 'Маракасы',      icon: '🪇', letter: 'М' }
+      ],
+      zones: [
+          // note — обычный клик по сугробу у ёлки
+          { x: 5, y: 72, w: 14, h: 14, artifactId: 'note', interaction: 'click' },
+          // rukav — появляется на крыше при МаминоЗрение
+          { x: 48, y: 16, w: 10, h: 14, artifactId: 'rukav', interaction: 'event', requiredFlag: 'МаминоЗрение', trigger: 'click', phase: 1 },
+          // pipe — долгий клик по сугробу слева от снеговика
+          { x: 82, y: 66, w: 10, h: 12, artifactId: 'pipe', interaction: 'longpress' },
+          // bell — double click по голове снеговика
+          { x: 26, y: 16, w: 8,  h: 10, artifactId: 'bell', interaction: 'dblclick' },
+          // violin — multiclick7 по гирлянде над дверью
+          { x: 60, y: 44, w: 12, h: 10, artifactId: 'violin', interaction: 'multiclick7' },
+          // songbook — gesture по ёлке справа
+          { x: 15, y: 42, w: 10, h: 26, artifactId: 'songbook', interaction: 'gesture' },
+          // переключатель фонаря — флаг Свет
+          { x: 45, y: 52, w: 10,  h: 8, artifactId: null, interaction: 'toggle', flag: 'Свет' },
+          // переключатель МаминоЗрение
+          { x: 8,  y: 10, w: 6,  h: 10, artifactId: null, interaction: 'toggle', flag: 'МаминоЗрение' },
+          // snowglob — требует Свет + двойной клик по яркому блику на снегу справа
+          { x: 58, y: 70, w: 6, h: 6, artifactId: 'snowglob', interaction: 'event', requiredFlag: 'Свет', trigger: 'dblclick' }
+      ],
+      hintTexts: [
+          'Во дворе спрятались музыкальные предметы: часть зарыта в снег, часть висит на гирлянде или прячется на крыше.',
+          'Ищи странные сугробы рядом со снеговиком и ёлкой, гирлянду над дверью, гребень крыши и яркий блик на снегу справа.'
+      ],
+      correctOrder: ['note','pipe','bell','violin','songbook','rukav','snowglob']
+    },
+      {
+          id: 'scene_3',
+          name: 'Новогодняя гостиная — тёплый вечер',
+          bg: 'url("../assets/images/lvl_1/scene-room.jpg")',
+          mechanic: 'поменять местами',
+          artifacts: [
+              { id: 'candle',   name: 'Свеча',              icon: '🕯️', letter: 'С' },
+              { id: 'rukav',   name: 'Перчатки',            icon: '🧤',  letter: 'П' },
+              { id: 'candy',    name: 'Конфета',            icon: '🍬',  letter: 'К' },
+              { id: 'clock',    name: 'Часы',          icon: '⏰',  letter: 'Ч' },
+              { id: 'horse',    name: 'Лошадка', icon: '🐴',  letter: 'Л' },
+              { id: 'sock',     name: 'Носоки', icon: '🧦', letter: 'Н' },
+              { id: 'snowglob', name: 'Конверт',        icon: '🧧',  letter: 'К' }
+          ],
+          zones: [
+              // candle — обычный клик по свече у подарков у камина
+              { x: 44, y: 67, w: 10, h: 12, artifactId: 'candle', interaction: 'click' },
+              // rukav — появляется на спинке дивана при включённом МаминоЗрение
+              { x: 10, y: 62, w: 12, h: 14, artifactId: 'rukav', interaction: 'event', requiredFlag: 'МаминоЗрение', trigger: 'click', phase: 1 },
+              // candy — долгий клик по ковру перед камином
+              { x: 55, y: 80, w: 10, h: 10, artifactId: 'candy', interaction: 'longpress' },
+              // clock — двойной клик по каминной полке справа
+              { x: 70, y: 22, w: 10, h: 10, artifactId: 'clock', interaction: 'dblclick' },
+              // horse — 7-кратный клик по игрушке у основания ёлки
+              { x: 28, y: 66, w: 12, h: 10, artifactId: 'horse', interaction: 'multiclick7' },
+              // sock — жест вверх-вниз по подвешенному носку на правой стороне камина
+              { x: 88, y: 42, w: 8,  h: 18, artifactId: 'sock', interaction: 'gesture' },
+              // переключатель Свет — настольная лампа слева у дивана
+              { x: 70,  y: 50, w: 14, h: 12, artifactId: null, interaction: 'toggle', flag: 'Свет' },
+              // переключатель МаминоЗрение — кнопка у нижнего края экрана
+              { x: 2,  y: 90, w: 6,  h: 8,  artifactId: null, interaction: 'toggle', flag: 'МаминоЗрение' },
+              // snowglob — событийный: нужен Свет + двойной клик по шару на столике справа
+              { x: 92, y: 65, w: 10, h: 12, artifactId: 'snowglob', interaction: 'event', requiredFlag: 'Свет', trigger: 'dblclick' }
+          ],
+          hintTexts: [
+              'Спрятанные вещи прячутся у подарков у камина, на ковре, на диване, на каминной полке и на столике справа — но часть видно только при особом освещении или зрении.',
+              'Присмотрись к лампе у дивана, носку на камине, ковру перед огнём и небольшим предметам возле подарков и на столике.'
+          ],
+          correctOrder: ['candle','candy','horse','clock','sock','rukav','snowglob']
+      }
+
   ],
 
   init() {
@@ -120,7 +141,6 @@ const Level1 = {
     this.hintPanel = document.getElementById('hint-panel');
     this.hintToggle = document.getElementById('hint-toggle');
     this.hintText = document.getElementById('hint-text');
-    this.hintNext = document.getElementById('hint-next');
     this.hintReset = document.getElementById('hint-reset');
     this.puzzleInfo = document.getElementById('puzzle-info');
     this.checkBtn = document.getElementById('check-order');
@@ -288,8 +308,10 @@ const Level1 = {
    // После renderScene и createInventory — восстановить собранные предметы из локалки
    loadSavedCollected() {
      if (!this.sceneEl || !this.inventoryEl) return;
-     const playerKey = this.selectedPlayer || Storage.load('level1_currentPlayer') || 'guest';
-     const saved = Storage.load(`level1_${playerKey}_collected`);
+    const playerKey = this.selectedPlayer || Storage.load('level1_currentPlayer') || 'guest';
+    const sceneId = this.scene && this.scene.id ? this.scene.id : 'scene_1';
+    const saveKey = `level1_${sceneId}_${playerKey}_collected`;
+    const saved = Storage.load(saveKey);
      if (!saved || !Array.isArray(saved) || saved.length === 0) return;
 
      // Сначала убедимся, что слоты созданы
@@ -334,27 +356,100 @@ const Level1 = {
      }
    },
 
-   startLevel() {
-     // reset internal state (не затираем selectedPlayer)
-     this.hintLevel = 0;
-     this.orderMode = false;
-     this.selectedSlotIndex = null;
-     this.hintPanel.style.display = 'none';
-     // render scene and inventory
-     this.renderScene();
-     this.createInventory();
-     // восстановление прогресса (если есть)
-     this.loadSavedCollected();
-     this.puzzleInfo.textContent = 'Найдите 7 артефактов на карте.';
-   },
+  // helper: ключ прогресса для текущего игрока
+  progressKey() {
+    const player = this.selectedPlayer || Storage.load('level1_currentPlayer') || 'guest';
+    return `level1_${player}_progress`;
+  },
 
-   renderScene() {
-     // choose random scene
-     this.scene = this.scenes[Math.floor(Math.random() * this.scenes.length)];
-     if (this.scene.bg) this.sceneEl.style.backgroundImage = this.scene.bg;
-     this.sceneEl.innerHTML = '';
-     // create hotspots
-     this.scene.zones.forEach(z => {
+  // загрузить сохранённый объект прогресса { sceneId, collected: [...] }
+  loadSavedProgress() {
+    try {
+      const saved = Storage.load(this.progressKey());
+      return saved && typeof saved === 'object' ? saved : null;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  // применить сохранённый прогресс (collected array) — ожидает, что сцена и DOM уже отрисованы
+  applySavedCollected(saved) {
+    if (!saved || !Array.isArray(saved.collected) || !this.sceneEl || !this.inventoryEl) return;
+    // гарантируем, что слоты созданы
+    if (!this.inventoryEl.children || this.inventoryEl.children.length === 0) this.createInventory();
+    // сбросим текущий внутренний state (чтобы не было рассинхронов)
+    this.inventory = new Array(7).fill(null);
+    this.collected = this.collected || {};
+
+    const arr = saved.collected;
+    for (let i = 0; i < arr.length && i < 7; i++) {
+      const id = arr[i];
+      if (!id) continue;
+      const art = this.scene.artifacts.find(a => a.id === id);
+      this.inventory[i] = id;
+      this.collected[id] = true;
+      const slot = this.inventoryEl.children[i];
+      if (slot) {
+        slot.dataset.artifact = id;
+        slot.innerHTML = `<div style="text-align:center"><div style="font-size:30px">${art ? art.icon : '?'}</div><div style="font-size:12px">${art ? art.name : id}</div></div>`;
+        slot.classList.add('collected');
+      }
+      // деактивировать соответствующую зону на сцене
+      try {
+        const selector = `.hotspot[data-artifact="${id}"]`;
+        const zone = this.sceneEl.querySelector(selector);
+        if (zone) {
+          zone.style.pointerEvents = 'none';
+          zone.style.opacity = '0.25';
+          zone.classList.add('revealed');
+        }
+      } catch (e) { /* silent */ }
+    }
+
+    // если восстановлено 7 предметов — перейти в упорядочивание
+    if (Object.keys(this.collected).length === 7) {
+      setTimeout(() => this.beginOrdering(), 300);
+    }
+  },
+
+  startLevel() {
+    // reset internal state (не затираем selectedPlayer)
+    this.hintLevel = 0;
+    this.orderMode = false;
+    this.selectedSlotIndex = null;
+    if (this.hintPanel) this.hintPanel.style.display = 'none';
+
+    // Попытка загрузить прогресс (чтобы определить сцену и collected)
+    const saved = this.loadSavedProgress();
+    if (saved && saved.sceneId) {
+      // используем сохранённую сцену — не выбираем случайную
+      this.scene = this.scenes.find(s => s.id === saved.sceneId) || this.scenes[0];
+    } else {
+      // если нет сохранения – очистим текущую this.scene чтобы renderScene выбрал случайную
+      this.scene = null;
+    }
+
+    // render scene and inventory
+    this.renderScene();
+    this.createInventory();
+
+    // применяем сохранённый инвентарь (если есть)
+    if (saved) {
+      this.applySavedCollected(saved);
+    }
+
+    this.puzzleInfo.textContent = 'Найдите 7 артефактов на карте.';
+  },
+
+  renderScene() {
+    // если this.scene уже задан (восстановление), не перезаписываем его
+    if (!this.scene) {
+      this.scene = this.scenes[Math.floor(Math.random() * this.scenes.length)];
+    }
+    if (this.scene.bg) this.sceneEl.style.backgroundImage = this.scene.bg;
+    this.sceneEl.innerHTML = '';
+    // create hotspots
+    this.scene.zones.forEach(z => {
        const el = document.createElement('div');
        el.className = 'hotspot';
        el.style.left = z.x + '%';
@@ -688,7 +783,7 @@ const Level1 = {
          fakeBg.style.top = '0';
          fakeBg.style.right = '0';
          fakeBg.style.bottom = '0';
-         fakeBg.style.backgroundImage = 'url("../assets/images/fake2.jpg")';
+         fakeBg.style.backgroundImage = 'url("../assets/images/lvl_1/fake2.jpg")';
          fakeBg.style.backgroundSize = 'cover';
          fakeBg.style.backgroundPosition = 'center';
          fakeBg.style.zIndex = '10'; // ниже hotspot'ов (hotspot z-index обычно выше)
@@ -721,7 +816,7 @@ const Level1 = {
              fake.style.height = '90px';
              fake.style.position = 'absolute';
              fake.style.zIndex = '60';
-             fake.innerHTML = '🧤';
+             fake.innerHTML =  '🧤';
              fake.addEventListener('click', (ev) => {
                  ev.stopPropagation();
                  this.puzzleInfo.textContent = 'А тут ничего нет. Это была магия мамы!' +
@@ -864,12 +959,18 @@ const Level1 = {
      if (Object.keys(this.collected).length === 7) {
        setTimeout(() => this.beginOrdering(), 400);
      }
-     // save temporary progress
-     Storage.save(`level1_${this.selectedPlayer || 'guest'}_collected`, Object.keys(this.collected));
+     // save temporary progress: сохраняем сцену + порядок инвентаря
+     try {
+       const progress = { sceneId: this.scene && this.scene.id ? this.scene.id : (this.scene ? this.scene.id : null), collected: this.inventory.filter(Boolean) };
+       Storage.save(this.progressKey(), progress);
+     } catch (e) {
+       console.warn('Ошибка сохранения прогресса', e);
+     }
    },
 
    createInventory() {
      this.inventoryEl.innerHTML = '';
+     this.inventory = new Array(7).fill(null);
      for (let i = 0; i < 7; i++) {
        const slot = document.createElement('div');
        slot.className = 'slot';
@@ -877,22 +978,7 @@ const Level1 = {
        slot.addEventListener('click', () => this.onSlotClick(i));
        this.inventoryEl.appendChild(slot);
      }
-     // restore if needed
-     const saved = Storage.load(`level1_${this.selectedPlayer || 'guest'}_collected`);
-     if (saved && Array.isArray(saved)) {
-       // try to restore into slots in order (best-effort)
-       saved.forEach((id, idx) => {
-         const art = this.scene.artifacts.find(a => a.id === id);
-         if (art && this.inventory[idx] === null) {
-           this.inventory[idx] = id;
-           const slot = this.inventoryEl.children[idx];
-           slot.dataset.artifact = id;
-           slot.innerHTML = `<div style="text-align:center"><div style="font-size:30px">${art.icon}</div><div style="font-size:12px">${art.name}</div></div>`;
-           slot.classList.add('collected');
-           this.collected[id] = true;
-         }
-       });
-     }
+    // больше НЕ восстанавливаем здесь из старого ключа — восстановление выполняется в startLevel через applySavedCollected
    },
 
    beginOrdering() {
@@ -1102,9 +1188,8 @@ const Level1 = {
          }
        }
 
-       // удалить временный прогресс из localStorage для текущего игрока
-       const key = `level1_${this.selectedPlayer || 'guest'}_collected`;
-       try { localStorage.removeItem(key); } catch (e) { /* silent */ }
+       // удалить временный прогресс из localStorage для текущего игрока (новый ключ)
+       try { localStorage.removeItem(this.progressKey()); } catch (e) { /* silent */ }
      } catch (e) {
        console.warn('Ошибка при очистке инвентаря:', e);
      }

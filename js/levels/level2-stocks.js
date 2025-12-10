@@ -1,489 +1,690 @@
+// ============================================================================
+// УРОВЕНЬ 2: "БИРЖЕВОЙ МАГНАТ" — ПОЛНАЯ РЕАЛИЗАЦИЯ V3
+// ============================================================================
+// С изображениями сценариев, проверками баланса и статусом банкротства
+// ============================================================================
+
+const LEVEL2_SCENARIOS = [
+    {
+        id: '1', paper: 'MGNT', startDate: '15.02.2018', startPosition: {count:0,price:0},
+        news: 'Реальная история: Сергей Галицкий продает 29,1% акций Магнита группе ВТБ за 138 млрд руб.',
+        analysis: 'С одной стороны, это привлечение новых денег в компанию, с другой стороны смена руководства может привести к неопределённости',
+        startPrice: 4847,
+        startImage: '../assets/images/MGNT_2_start.png',
+        reaction: 'Падение 12% — рынок опасался смены стратегии и ухода основателя.',
+        endImage: '../assets/images/MGNT_2_finish.png',
+        endDate: '19.02.2018',
+        endPrice: 4251, minPrice: 4250, maxPrice: 4909
+    },
+    {
+        id: '2', paper: 'MGNT', startDate: '15.02.2018', startPosition: {count:1,price:5000},
+        news: 'Реальная история: Сергей Галицкий продает 29,1% акций Магнита группе ВТБ за 138 млрд руб.',
+        analysis: 'С одной стороны, это привлечение новых денег в компанию, с другой стороны смена руководства может привести к неопределённости',
+        startPrice: 4847,
+        startImage: '../assets/images/MGNT_2_start.png',
+        reaction: 'Падение 12% — рынок опасался смены стратегии и ухода основателя.',
+        endImage: '../assets/images/MGNT_2_finish.png',
+        endDate: '19.02.2018',
+        endPrice: 4251, minPrice: 4250, maxPrice: 4909
+    },
+    {
+        id: '3', paper: 'MGNT', startDate: '15.02.2018', startPosition: {count:10,price:4847},
+        news: 'Реальная история: Сергей Галицкий продает 29,1% акций Магнита группе ВТБ за 138 млрд руб.',
+        analysis: 'С одной стороны, это привлечение новых денег в компанию, с другой стороны смена руководства может привести к неопределённости',
+        startPrice: 4847,
+        startImage: '../assets/images/MGNT_2_start.png',
+        reaction: 'Падение 12% — рынок опасался смены стратегии и ухода основателя.',
+        endImage: '../assets/images/MGNT_2_finish.png',
+        endDate: '19.02.2018',
+        endPrice: 4251, minPrice: 4250, maxPrice: 4909
+    },
+    {
+        id: '4', paper: 'MGNT', startDate: '15.02.2018', startPosition: {count:-5,price:4900},
+        news: 'Реальная история: Сергей Галицкий продает 29,1% акций Магнита группе ВТБ за 138 млрд руб.',
+        analysis: 'С одной стороны, это привлечение новых денег в компанию, с другой стороны смена руководства может привести к неопределённости',
+        startPrice: 4847,
+        startImage: '../assets/images/MGNT_2_start.png',
+        reaction: 'Падение 12% — рынок опасался смены стратегии и ухода основателя.',
+        endImage: '../assets/images/MGNT_2_finish.png',
+        endDate: '19.02.2018',
+        endPrice: 4251, minPrice: 4250, maxPrice: 4909
+    },
+    {
+        id: '5', paper: 'MGNT', startDate: '15.02.2018', startPosition: {count:7,price:4847},
+        news: 'Реальная история: Сергей Галицкий продает 29,1% акций Магнита группе ВТБ за 138 млрд руб.',
+        analysis: 'С одной стороны, это привлечение новых денег в компанию, с другой стороны смена руководства может привести к неопределённости',
+        startPrice: 4847,
+        startImage: '../assets/images/MGNT_2_start.png',
+        reaction: 'Падение 12% — рынок опасался смены стратегии и ухода основателя.',
+        endImage: '../assets/images/MGNT_2_finish.png',
+        endDate: '19.02.2018',
+        endPrice: 4251, minPrice: 4250, maxPrice: 4909
+    },
+    {
+        id: '6', paper: 'MGNT', startDate: '15.02.2018', startPosition: {count:-1,price:4847},
+        news: 'Реальная история: Сергей Галицкий продает 29,1% акций Магнита группе ВТБ за 138 млрд руб.',
+        analysis: 'С одной стороны, это привлечение новых денег в компанию, с другой стороны смена руководства может привести к неопределённости',
+        startPrice: 4847,
+        startImage: '../assets/images/MGNT_2_start.png',
+        reaction: 'Падение 12% — рынок опасался смены стратегии и ухода основателя.',
+        endImage: '../assets/images/MGNT_2_finish.png',
+        endDate: '19.02.2018',
+        endPrice: 4251, minPrice: 4250, maxPrice: 4909
+    }
+];
+
+// ============================================================================
+// ГЛАВНЫЙ ОБЪЕКТ УРОВНЯ 2
+// ============================================================================
+
 const Level2 = {
-  keyPrefix: 'level2_pool_',
-  pool: null, // { id, players: [{name,balance}], pickedScenarios:[], currentIndex, history:[] }
-  chart: null,
-  totalRounds: 5,
-  init() {
-    // DOM refs
-    this.startModal = document.getElementById('startModal');
-    this.closeStartBtn = document.getElementById('close-start');
-    this.playersExistingEl = document.getElementById('players-existing');
-    this.btnAddPlayer = document.getElementById('btn-add-player');
-    this.inputNewPlayer = document.getElementById('new-player-name');
-    this.btnStart = document.getElementById('btn-start-game');
-    this.btnCancelStart = document.getElementById('btn-cancel-start');
-    this.savedSessionsEl = document.getElementById('saved-sessions');
-    this.balancesEl = document.getElementById('balances');
-    this.actionsWrapper = document.getElementById('actions-wrapper');
-    this.scenarioTitle = document.getElementById('scenario-title');
-    this.scenarioNews = document.getElementById('scenario-news');
-    this.btnReveal = document.getElementById('btn-reveal');
-    this.btnNext = document.getElementById('btn-next');
-    this.btnSaveExit = document.getElementById('btn-save-exit');
-    this.roundInfo = document.getElementById('round-info');
-    this.summaryTable = document.getElementById('summary-table');
-    this.finalSummary = document.getElementById('final-summary');
-    this.noSummary = document.getElementById('no-summary');
-    this.btnFinishSave = document.getElementById('btn-finish-save');
-    this.btnNewPool = document.getElementById('btn-new-pool');
-    this.sessionListEl = document.getElementById('session-list');
+    // === СОСТОЯНИЕ ИГРЫ ===
+    currentRound: 0,
+    totalRounds: 5,
+    currentScenario: null,
+    usedScenarios: [],
+    sessionId: null,
+    gamePlayers: [],
+    playerActions: {},
 
-    // image element вместо Chart.js
-    this.imageEl = document.getElementById('scenarioImage');
+    // === DOM ЭЛЕМЕНТЫ ===
+    selectPlayersModal: null,
+    playerListContainer: null,
+    startGameBtn: null,
+    sceneContainer: null,
+    roundLabel: null,
+    scenarioInfo: null,
+    startImageContainer: null,
+    endImageContainer: null,
+    playerActionsContainer: null,
+    revealFutureBtn: null,
+    nextCaseBtn: null,
+    backToMenuBtn: null,
+    finalResultsModal: null,
 
-    // events
-    if (this.btnAddPlayer) this.btnAddPlayer.addEventListener('click', () => this.handleAddPlayer());
-    if (this.btnStart) this.btnStart.addEventListener('click', () => this.handleStart());
-    if (this.btnCancelStart) this.btnCancelStart.addEventListener('click', () => this.handleCancelStart());
-    if (this.btnReveal) this.btnReveal.addEventListener('click', () => this.handleReveal());
-    if (this.btnNext) this.btnNext.addEventListener('click', () => this.nextScenario());
-    if (this.btnSaveExit) this.btnSaveExit.addEventListener('click', () => this.saveAndExit());
-    if (this.btnFinishSave) this.btnFinishSave.addEventListener('click', () => this.finishAndSave());
-    if (this.btnNewPool) this.btnNewPool.addEventListener('click', () => this.openNewPoolModal());
+    // === ИНИЦИАЛИЗАЦИЯ ===
+    init() {
+        document.addEventListener('DOMContentLoaded', () => this.setup());
+    },
 
-    // render existing players and sessions
-    this.renderExistingPlayers();
-    this.renderSavedSessions();
-    // show modal on load
-    this.showStartModalIfNeeded();
-      if (this.closeStartBtn) {
-          this.closeStartBtn.addEventListener('click', () => {
-              // поведение зависит от режима: 'info' — просто закрыть модал, 'initial' — уйти на главную
-              if (this.startModalMode === 'info') {
-                  if (this.hideStart) this.hideStart();
-              } else {
-                  // initial или по умолчанию — вернуть на главную
-                  if (this.hideStart) this.hideStart();
-                  window.location.href = "../index.html";
-              }
-          });
-      }
-  },
+    setup() {
+        console.log('🎮 Level2 setup initializing...');
 
-  // --- UI helpers ---
-  showStartModalIfNeeded() {
-    // if there's a saved active pool, offer continue; otherwise open modal
-    const lastPoolId = localStorage.getItem(this.keyPrefix + 'last');
-    if (lastPoolId) {
-      // show modal with continue option
-      this.startModal.classList.remove('hidden');
-    } else {
-      this.startModal.classList.remove('hidden');
-    }
-  },
+        // Получаем DOM элементы
+        this.selectPlayersModal = document.getElementById('select-players-modal');
+        this.playerListContainer = document.getElementById('player-list');
+        this.startGameBtn = document.getElementById('start-game-btn');
+        this.sceneContainer = document.getElementById('scene');
+        this.roundLabel = document.getElementById('round-label');
+        this.scenarioInfo = document.getElementById('scenario-info');
+        this.playerActionsContainer = document.getElementById('player-actions');
+        this.revealFutureBtn = document.getElementById('reveal-future');
+        this.nextCaseBtn = document.getElementById('next-case');
+        this.backToMenuBtn = document.getElementById('back-to-menu');
+        this.finalResultsModal = document.getElementById('final-results-modal');
 
-  renderExistingPlayers() {
-    if (!this.playersExistingEl) return;
-    this.playersExistingEl.innerHTML = '';
-    Players.init(); // ensure loaded
-    const list = Players.list || [];
-    list.forEach(p => {
-      const lbl = document.createElement('label');
-      const chk = document.createElement('input');
-      chk.type = 'checkbox';
-      chk.value = p.name;
-      lbl.appendChild(chk);
-      lbl.appendChild(document.createTextNode(' ' + p.name));
-      this.playersExistingEl.appendChild(lbl);
-    });
-  },
+        // Инициализируем систему игроков
+        Players.init && Players.init();
 
-  renderSavedSessions() {
-    if (!this.savedSessionsEl) return;
-    this.savedSessionsEl.innerHTML = '';
-    // enumerate localStorage keys starting with prefix
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith(this.keyPrefix)) {
-        try {
-          const pool = JSON.parse(localStorage.getItem(key));
-          const btn = document.createElement('button');
-          btn.className = 'btn secondary';
-          btn.textContent = `Продолжить пул ${pool.id} (раунд ${pool.currentIndex+1 || 1})`;
-          btn.addEventListener('click', () => this.loadPool(pool.id));
-          this.savedSessionsEl.appendChild(btn);
-        } catch (e) { /* ignore */ }
-      }
-    }
-  },
+        // Обработчики
+        if (this.startGameBtn) {
+            this.startGameBtn.addEventListener('click', () => this.startGameWithSelectedPlayers());
+        }
+        if (this.revealFutureBtn) {
+            this.revealFutureBtn.addEventListener('click', () => this.revealFutureAndCalculate());
+        }
+        if (this.nextCaseBtn) {
+            this.nextCaseBtn.addEventListener('click', () => this.nextScenario());
+        }
+        if (this.backToMenuBtn) {
+            this.backToMenuBtn.addEventListener('click', () => this.saveProgressAndReturn());
+        }
 
-  handleAddPlayer() {
-    const name = (this.inputNewPlayer && this.inputNewPlayer.value || '').trim();
-    if (!name) return;
-    Players.add(name);
-    this.inputNewPlayer.value = '';
-    this.renderExistingPlayers();
-  },
+        // Проверяем, есть ли сохранённая сессия
+        const savedSession = Storage.load('level2_session');
+        if (savedSession && savedSession.gamePlayers && savedSession.gamePlayers.length > 0) {
+            this.showSessionResumeOption(savedSession);
+        } else {
+            this.showPlayerSelection();
+        }
 
-  handleCancelStart() {
-    // when start modal is initial (first open) Cancel should go to main; here modal always closable
-    this.startModal.classList.add('hidden');
-    // if no active pool present, go back
-    const lastPoolId = localStorage.getItem(this.keyPrefix + 'last');
-    if (!lastPoolId) {
-      window.location.href = '../index.html';
-    }
-  },
+        console.log('✅ Level2 setup completed');
+    },
 
-  handleStart() {
-    // collect selected players
-    const checks = Array.from(this.playersExistingEl.querySelectorAll('input[type=checkbox]:checked'));
-    const names = checks.map(c => c.value).filter(Boolean);
-    if (names.length === 0) {
-      alert('Выберите хотя бы одного игрока');
-      return;
-    }
-    // create pool object
-    const poolId = 'pool_' + Date.now();
-    const players = names.map(n => ({ name: n, balance: 100000, initialBalance: 100000 }));
-    this.pool = {
-      id: poolId,
-      players,
-      pickedScenarios: [],
-      currentIndex: 0,
-      history: []
-    };
-    // pick scenarios (5) from LEVEL2_SCENARIOS
-    this.pool.pickedScenarios = this.pickScenarios(this.totalRounds);
-    // save
-    localStorage.setItem(this.keyPrefix + poolId, JSON.stringify(this.pool));
-    localStorage.setItem(this.keyPrefix + 'last', poolId);
-    this.startModal.classList.add('hidden');
-    this.renderBalances();
-    this.renderScenario();
-    this.renderSavedSessions();
-  },
+    // === ВЫБОР ИГРОКОВ ===
+    showPlayerSelection() {
+        if (this.selectPlayersModal) {
+            this.selectPlayersModal.style.display = 'flex';
+        }
+        this.renderPlayerCheckboxes();
+    },
 
-  loadPool(poolId) {
-    const raw = localStorage.getItem(this.keyPrefix + poolId);
-    if (!raw) { alert('Сессия не найдена'); return; }
-    this.pool = JSON.parse(raw);
-    // ensure balances exist
-    this.pool.players.forEach(p => { if (typeof p.balance !== 'number') p.balance = p.initialBalance || 100000; });
-    this.startModal.classList.add('hidden');
-    this.renderBalances();
-    this.renderScenario();
-    this.renderSavedSessions();
-  },
+    renderPlayerCheckboxes() {
+        if (!this.playerListContainer) return;
 
-  pickScenarios(n) {
-    const pool = (typeof LEVEL2_SCENARIOS !== 'undefined' ? LEVEL2_SCENARIOS.slice() : []);
-    // shuffle
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
-    const chosen = pool.slice(0, n).map(s => {
-      // ensure series fields: if startSeries/endSeries not present, create simple arrays from startPrice/endPrice
-      const startSeries = s.startSeries || this.generateSeries(s.startPrice || s.price || 100, 30, 30);
-      const endSeries = s.endSeries || this.generateSeries(s.endPrice || s.end_price || (startSeries[startSeries.length-1] * (1 + ((Math.random()-0.5)/5))), 30, 30);
-      return Object.assign({}, s, { startSeries, endSeries });
-    });
-    return chosen;
-  },
+        this.playerListContainer.innerHTML = '';
+        const playerList = Players.list || [];
 
-  // simple price series generator (not used if provided)
-  generateSeries(base, volatility = 6, len = 30) {
-    const arr = [];
-    let p = base;
-    for (let i = 0; i < len; i++) {
-      p = Math.max(1, p + (Math.random() - 0.5) * volatility);
-      arr.push(Number(p.toFixed(2)));
-    }
-    return arr;
-  },
+        if (playerList.length === 0) {
+            const msg = document.createElement('p');
+            msg.textContent = 'Нет сохранённых игроков. Добавьте их на главной странице.';
+            this.playerListContainer.appendChild(msg);
 
-  renderBalances() {
-    if (!this.balancesEl || !this.pool) return;
-    this.balancesEl.innerHTML = '';
-    this.pool.players.forEach(p => {
-      const div = document.createElement('div');
-      div.className = 'balance-card';
-      div.innerHTML = `<strong>${p.name}</strong><div class="small">Баланс: <span data-name="${p.name}" class="bal-val">${Number(p.balance).toLocaleString('ru-RU')} ₽</span></div>`;
-      this.balancesEl.appendChild(div);
-    });
-  },
+            const guestLabel = document.createElement('label');
+            guestLabel.innerHTML = '<input type="checkbox" data-name="Гость" value="Гость" checked> Гость';
+            this.playerListContainer.appendChild(guestLabel);
+            return;
+        }
 
-  renderScenario() {
-    if (!this.pool) return;
-    const idx = this.pool.currentIndex || 0;
-    if (idx >= this.pool.pickedScenarios.length) {
-      this.showFinal();
-      return;
-    }
-    const sc = this.pool.pickedScenarios[idx];
-    this.currentScenario = sc;
-    this.scenarioTitle.textContent = `${sc.paper || sc.title || 'Сценарий'} — ${idx+1}/${this.totalRounds}`;
-    // show news/analysis/startPosition using updateRoundInfo
-    this.updateRoundInfo();
-    // draw start image instead of chart
-    if (this.imageEl) {
-      this.imageEl.classList.remove('fading');
-      this.imageEl.src = sc.startImage || '';
-      this.imageEl.alt = `${sc.paper || sc.title} — старт`;
-    }
-    // render action forms for each player
-    this.renderActionForms();
-    this.btnReveal.disabled = false;
-    this.btnNext.disabled = true;
-  },
+        playerList.forEach(player => {
+            const label = document.createElement('label');
+            label.innerHTML = `<input type="checkbox" data-name="${player.name}" value="${player.name}" checked> ${player.name}`;
+            this.playerListContainer.appendChild(label);
+        });
+    },
 
-  updateRoundInfo() {
-    if (!this.currentScenario) return;
-    const sc = this.currentScenario;
-    const idx = (this.pool && this.pool.currentIndex) ? this.pool.currentIndex : 0;
-    this.roundInfo.textContent = `Раунд ${idx+1} / ${this.totalRounds}`;
-    // compose info
-    const parts = [];
-    if (sc.news) parts.push(`Новость: ${sc.news}`);
-    if (sc.analysis) parts.push(`Анализ: ${sc.analysis}`);
-    if (sc.startPosition) {
-      const sp = sc.startPosition;
-      parts.push(`Начальная позиция: ${sp.count} шт @ ${Number(sp.price).toLocaleString('ru-RU')} ₽`);
-    } else if (typeof sc.startPrice === 'number') {
-      parts.push(`Стартовая цена: ${Number(sc.startPrice).toFixed(2)} ₽`);
-    }
-    this.scenarioNews.textContent = parts.join(' — ');
-  },
+    startGameWithSelectedPlayers() {
+        const checkboxes = this.playerListContainer.querySelectorAll('input[type="checkbox"]:checked');
+        const selected = Array.from(checkboxes).map(cb => cb.value);
 
-  renderActionForms() {
-    if (!this.actionsWrapper || !this.pool) return;
-    this.actionsWrapper.innerHTML = '';
-    this.pool.players.forEach((p, pi) => {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'player-action';
-      // max qty estimate (for buy)
-      const price = this.currentScenario.startPrice || this.currentScenario.startSeries.slice(-1)[0];
-      const maxQty = Math.floor((p.balance > 0 ? p.balance : 0) / (price || 1));
-      wrapper.innerHTML = `
-        <div style="flex:1">
-          <strong>${p.name}</strong>
-          <div class="small">Баланс: ${Number(p.balance).toLocaleString('ru-RU')} ₽</div>
-        </div>
-        <div style="min-width:300px; display:flex; gap:8px; align-items:center;">
-          <select data-player="${p.name}" class="action-type">
-            <option value="hold">Держать</option>
-            <option value="market_buy">Рыночная — Купить</option>
-            <option value="market_sell">Рыночная — Продать</option>
-            <option value="limit_buy">Лимит — Купить</option>
-            <option value="limit_sell">Лимит — Продать</option>
-          </select>
-          <input type="number" data-player="${p.name}" class="action-qty" min="0" value="${Math.max(0, Math.min(1, maxQty))}" placeholder="шт" style="width:80px"/>
-          <input type="number" data-player="${p.name}" class="action-price hidden" placeholder="цена лимита" style="width:100px"/>
+        if (selected.length === 0) {
+            alert('Выберите хотя бы одного игрока!');
+            return;
+        }
+
+        // Инициализируем сессию
+        this.gamePlayers = selected;
+        this.currentRound = 0;
+        this.usedScenarios = [];
+        this.playerActions = {};
+        this.sessionId = Date.now().toString();
+
+        // Инициализируем балансы (100000 для каждого)
+        this.gamePlayers.forEach(player => {
+            const balance = Storage.load(`level2_balance_${player}`) || 100000;
+            Storage.save(`level2_balance_${player}`, balance);
+        });
+
+        // Скрываем модал и стартуем первый сценарий
+        if (this.selectPlayersModal) {
+            this.selectPlayersModal.style.display = 'none';
+        }
+
+        this.nextScenario();
+    },
+    resumeSession(session) {
+        console.log('🔄 Загрузка сохранённой сессии...');
+
+        // Восстанавливаем состояние игры
+        this.gamePlayers = session.gamePlayers;
+        this.currentRound = session.currentRound;
+        this.usedScenarios = session.usedScenarios || [];
+        this.sessionId = session.sessionId || Date.now().toString();
+
+        // Восстанавливаем балансы каждого игрока
+        if (session.playerBalances) {
+            Object.entries(session.playerBalances).forEach(([player, balance]) => {
+                Storage.save(`level2_balance_${player}`, balance);
+                console.log(`✅ ${player}: ${this.formatMoney(balance)} ₽`);
+            });
+        }
+
+        console.log(`✅ Сессия загружена. Раунд ${this.currentRound + 1} / 5`);
+
+        // Продолжаем игру
+        if (this.currentRound >= this.totalRounds) {
+            // Игра уже закончена, показываем финальные результаты
+            this.showFinalResults();
+        } else {
+            // Продолжаем с текущего раунда
+            this.nextScenario();
+        }
+    },
+
+    showSessionResumeOption(session) {
+        this.showPlayerSelection();
+    },
+
+    // === СЦЕНАРИИ ===
+    getNextScenario() {
+        if (this.currentRound >= this.totalRounds) {
+            return null;
+        }
+
+        let scenario;
+        do {
+            scenario = LEVEL2_SCENARIOS[Math.floor(Math.random() * LEVEL2_SCENARIOS.length)];
+        } while (this.usedScenarios.includes(scenario.id));
+
+        this.usedScenarios.push(scenario.id);
+        return scenario;
+    },
+
+    renderScenario() {
+        this.currentScenario = this.getNextScenario();
+
+        if (!this.currentScenario) {
+            this.showFinalResults();
+            return;
+        }
+
+        // Обновляем заголовок раунда
+        const roundText = `Раунд ${this.currentRound + 1} / ${this.totalRounds} | ${this.currentScenario.startDate} → ${this.currentScenario.endDate}`;
+        if (this.roundLabel) {
+            this.roundLabel.textContent = roundText;
+        }
+
+        // Показываем информацию о сценарии
+        if (this.scenarioInfo) {
+            this.scenarioInfo.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 30px;">
+          <div style="flex: 1;">
+            <h3>${this.currentScenario.paper}</h3>
+            <p><strong>Период:</strong> ${this.currentScenario.startDate} → ${this.currentScenario.endDate}</p>
+            <p><strong>Начальная цена:</strong> ${this.formatMoney(this.currentScenario.startPrice)} ₽</p>
+            <p><strong>Конечная цена:</strong> ${this.formatMoney(this.currentScenario.endPrice)} ₽</p>
+            <p><strong>Диапазон:</strong> ${this.formatMoney(this.currentScenario.minPrice)} - ${this.formatMoney(this.currentScenario.maxPrice)} ₽</p>
+            <p><strong>Новость:</strong> ${this.currentScenario.news}</p>
+            <p><strong>Анализ:</strong> ${this.currentScenario.analysis}</p>
+          </div>
+          <div style="flex: 0 0 300px;">
+            <img src="${this.currentScenario.startImage}" alt="Начальный график" style="width: 100%; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          </div>
         </div>
       `;
-      this.actionsWrapper.appendChild(wrapper);
-    });
-    // attach listeners for showing price input on limit
-    this.actionsWrapper.querySelectorAll('.action-type').forEach(sel => {
-      sel.addEventListener('change', (e) => {
-        const player = sel.dataset.player;
-        const parent = sel.closest('.player-action');
-        const priceInp = parent.querySelector('.action-price');
-        if (sel.value === 'limit_buy' || sel.value === 'limit_sell') priceInp.classList.remove('hidden'); else priceInp.classList.add('hidden');
-      });
-    });
-  },
-
-  collectActions() {
-    // returns map name -> {type,qty,price}
-    const actions = {};
-    if (!this.pool) return actions;
-    const nodes = Array.from(this.actionsWrapper.querySelectorAll('.player-action'));
-    nodes.forEach(node => {
-      const name = node.querySelector('strong').textContent;
-      const sel = node.querySelector('.action-type');
-      const qtyInp = node.querySelector('.action-qty');
-      const priceInp = node.querySelector('.action-price');
-      const type = sel ? sel.value : 'hold';
-      const qty = qtyInp ? Math.max(0, Math.floor(Number(qtyInp.value)||0)) : 0;
-      const price = priceInp && priceInp.value ? Number(priceInp.value) : null;
-      actions[name] = { type, qty, price };
-    });
-    return actions;
-  },
-
-  handleReveal() {
-    if (!this.pool || !this.currentScenario) return;
-    this.btnReveal.disabled = true;
-    const sc = this.currentScenario;
-    // вместо анимации Chart.js — плавно сменим картинку с startImage на endImage
-    if (!this.imageEl) {
-      // fallback: сразу считать
-      const actions = this.collectActions();
-      this.calculatePayouts(actions, sc);
-      this.btnNext.disabled = false;
-      return;
-    }
-    // плавное исчезновение
-    this.imageEl.classList.add('fading');
-    const transitionMs = 650;
-    setTimeout(() => {
-      // смена на конечную картинку
-      this.imageEl.src = sc.endImage || sc.startImage || '';
-      this.imageEl.alt = `${sc.paper || sc.title} — финал`;
-      // показать (fade-in)
-      this.imageEl.classList.remove('fading');
-      // после окончания перехода запускаем расчет выплат
-      setTimeout(() => {
-        const actions = this.collectActions();
-        this.calculatePayouts(actions, sc);
-        this.btnNext.disabled = false;
-      }, transitionMs + 50);
-    }, transitionMs);
-  },
-
-  calculatePayouts(actions, sc) {
-    // sc must have minPrice/maxPrice/endPrice/startPrice
-    const startPrice = sc.startPrice || sc.startSeries.slice(-1)[0];
-    const endPrice = sc.endPrice || sc.endSeries.slice(-1)[0];
-    const minPrice = (typeof sc.minPrice === 'number') ? sc.minPrice : Math.min(...sc.endSeries, ...sc.startSeries);
-    const maxPrice = (typeof sc.maxPrice === 'number') ? sc.maxPrice : Math.max(...sc.endSeries, ...sc.startSeries);
-    // record per player result
-    const roundResult = [];
-    this.pool.players.forEach(p => {
-      const action = actions[p.name] || { type: 'hold', qty: 0 };
-      let note = '';
-      let pnl = 0;
-      if (action.type === 'hold' || action.qty === 0) {
-        note = 'Держал';
-        pnl = 0;
-      } else if (action.type === 'market_buy') {
-        // buy at market open (startPrice), close at endPrice
-        pnl = (endPrice - startPrice) * action.qty;
-        note = `Маркет покупка ${action.qty} шт`;
-      } else if (action.type === 'market_sell') {
-        // short: sell at start, buy back at end
-        pnl = (startPrice - endPrice) * action.qty;
-        note = `Маркет продажа (шорт) ${action.qty} шт`;
-      } else if (action.type === 'limit_buy') {
-        // buy if price touched <= limit price somewhere between min/max
-        const limit = action.price;
-        if (limit === null) { note = 'Лимит без цены'; pnl = 0; }
-        else {
-          // for buy, execution if minPrice <= limit
-          if (minPrice <= limit) {
-            // executed at limit price (assume execution at limit)
-            pnl = (endPrice - limit) * action.qty;
-            note = `Лимит покупка исполнена @${limit}`;
-          } else {
-            note = 'Заявка не исполнилась';
-            pnl = 0;
-          }
         }
-      } else if (action.type === 'limit_sell') {
-        const limit = action.price;
-        if (limit === null) { note = 'Лимит без цены'; pnl = 0; }
-        else {
-          // for sell, execution if maxPrice >= limit
-          if (maxPrice >= limit) {
-            // executed at limit price (assume execution at limit)
-            pnl = (limit - endPrice) * action.qty;
-            note = `Лимит продажа исполнена @${limit}`;
-          } else {
-            note = 'Заявка не исполнилась';
-            pnl = 0;
-          }
+
+        // Рендерим форму для каждого игрока
+        this.renderPlayerActionForms();
+
+        // Показываем кнопку "Узнать будущее"
+        if (this.revealFutureBtn) {
+            this.revealFutureBtn.style.display = 'block';
         }
-      }
-      // update balance
-      p.balance = Number((p.balance + pnl).toFixed(2));
-      roundResult.push({ name: p.name, pnl, note, balance: p.balance });
-    });
+        if (this.nextCaseBtn) {
+            this.nextCaseBtn.style.display = 'none';
+        }
+    },
 
-    // save to history
-    this.pool.history = this.pool.history || [];
-    this.pool.history.push({ scenarioId: sc.id, result: roundResult });
-    // persist pool
-    localStorage.setItem(this.keyPrefix + this.pool.id, JSON.stringify(this.pool));
-    // update UI: balances and small table of results
-    this.renderBalances();
-    this.showRoundResults(roundResult);
-  },
+    renderPlayerActionForms() {
+        if (!this.playerActionsContainer) return;
 
-  showRoundResults(roundResult) {
-    // simple temporary popup: append below actions
-    const resBox = document.createElement('div');
-    resBox.className = 'card';
-    resBox.innerHTML = '<strong>Результаты раунда:</strong><div style="margin-top:8px;"></div>';
-    const body = resBox.querySelector('div');
-    roundResult.forEach(r => {
-      const row = document.createElement('div');
-      row.textContent = `${r.name}: ${r.pnl >= 0 ? '+' : ''}${r.pnl.toFixed(2)} ₽ — ${r.note} — Баланс: ${Number(r.balance).toLocaleString('ru-RU')} ₽`;
-      body.appendChild(row);
-    });
-    // insert after actionsWrapper
-    this.actionsWrapper.parentNode.insertBefore(resBox, this.actionsWrapper.nextSibling);
-    // auto remove after 6s
-    setTimeout(() => { if (resBox.parentNode) resBox.parentNode.removeChild(resBox); }, 6000);
-  },
+        this.playerActionsContainer.innerHTML = '';
+        this.playerActions = {};
 
-  nextScenario() {
-    // advance index
-    if (!this.pool) return;
-    this.pool.currentIndex = (this.pool.currentIndex || 0) + 1;
-    // if finished
-    if (this.pool.currentIndex >= this.pool.pickedScenarios.length) {
-      this.showFinal();
-      localStorage.setItem(this.keyPrefix + this.pool.id, JSON.stringify(this.pool));
-      return;
+        this.gamePlayers.forEach(playerName => {
+            const balance = this.getPlayerBalance(playerName);
+
+            // === ПРОВЕРКА БАНКРОТСТВА ===
+            if (balance <= 0) {
+                const bankruptDiv = document.createElement('div');
+                bankruptDiv.className = 'player-action-form';
+                bankruptDiv.style.borderLeftColor = '#f44336';
+                bankruptDiv.innerHTML = `
+          <h4>${playerName}</h4>
+          <p style="color: #f44336; font-weight: bold; font-size: 1.2em;">
+            💔 БАНКРОТ
+          </p>
+          <p style="color: #f44336;">Баланс: ${this.formatMoney(balance)} ₽</p>
+          <p style="color: #999;">К сожалению, у вас закончились деньги. Вы не можете совершать сделки.</p>
+        `;
+                this.playerActionsContainer.appendChild(bankruptDiv);
+                return;
+            }
+
+            const maxShares = Math.floor(balance / this.currentScenario.startPrice);
+
+            const formHTML = `
+        <div class="player-action-form" data-player="${playerName}">
+          <h4>${playerName}</h4>
+          <p>💰 Баланс: <strong>${this.formatMoney(balance)} ₽</strong></p>
+          <p>📊 Начальная позиция: <strong>${this.currentScenario.paper} @ ${this.formatMoney(this.currentScenario.startPrice)} ₽</strong></p>
+          <p>📈 Можно купить max: <strong>${maxShares} бумаг</strong></p>
+          
+          <div class="action-type">
+            <label>
+              <input type="radio" name="action_${playerName}" value="hold" checked> 
+              Держать (ничего не делать)
+            </label>
+          </div>
+          
+          <div class="action-type">
+            <label>
+              <input type="radio" name="action_${playerName}" value="market_buy"> 
+              Рыночная заявка: КУПИТЬ @ ${this.formatMoney(this.currentScenario.startPrice)}
+            </label>
+            <input type="number" name="count_${playerName}" min="0" max="${maxShares}" value="0" placeholder="Кол-во бумаг" data-max="${maxShares}" data-price="${this.currentScenario.startPrice}">
+          </div>
+          
+          <div class="action-type">
+            <label>
+              <input type="radio" name="action_${playerName}" value="market_sell"> 
+              Рыночная заявка: ПРОДАТЬ (Шорт) @ ${this.formatMoney(this.currentScenario.startPrice)}
+            </label>
+            <input type="number" name="count_sell_${playerName}" min="0" max="${maxShares}" value="0" placeholder="Кол-во бумаг">
+          </div>
+          
+          <div class="action-type">
+            <label>
+              <input type="radio" name="action_${playerName}" value="limit_buy"> 
+              Лимитная заявка: КУПИТЬ по цене
+            </label>
+            <input type="number" name="limit_price_buy_${playerName}" value="${this.currentScenario.startPrice}" placeholder="Цена">
+            <input type="number" name="count_limit_buy_${playerName}" min="0" max="${maxShares}" value="0" placeholder="Кол-во" data-max="${maxShares}">
+          </div>
+          
+          <div class="action-type">
+            <label>
+              <input type="radio" name="action_${playerName}" value="limit_sell"> 
+              Лимитная заявка: ПРОДАТЬ по цене
+            </label>
+            <input type="number" name="limit_price_sell_${playerName}" value="${this.currentScenario.startPrice}" placeholder="Цена">
+            <input type="number" name="count_limit_sell_${playerName}" min="0" max="${maxShares}" value="0" placeholder="Кол-во">
+          </div>
+        </div>
+      `;
+
+            this.playerActionsContainer.innerHTML += formHTML;
+        });
+
+        // Добавляем обработчик для проверки баланса при вводе
+        this.setupBalanceValidation();
+    },
+
+    setupBalanceValidation() {
+        this.playerActionsContainer.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const max = parseInt(e.target.dataset.max) || 0;
+                const price = parseInt(e.target.dataset.price) || 0;
+                let value = parseInt(e.target.value) || 0;
+
+                if (value > max) {
+                    console.warn(`⚠️ Введено ${value}, максимум ${max}`);
+                    e.target.value = max;
+                    alert(`⚠️ Вы ввели ${value} бумаг, но можете купить только ${max}.\nВыставлено максимальное значение.`);
+                }
+            });
+        });
+    },
+
+    // === РАСКРЫТИЕ БУДУЩЕГО И РАСЧЁТЫ ===
+    revealFutureAndCalculate() {
+        this.collectPlayerActions();
+        this.animateToEndImage();
+
+        setTimeout(() => {
+            this.calculateResults();
+
+            if (this.revealFutureBtn) {
+                this.revealFutureBtn.style.display = 'none';
+            }
+            if (this.nextCaseBtn) {
+                this.nextCaseBtn.style.display = 'block';
+            }
+        }, 1500);
+    },
+
+    collectPlayerActions() {
+        this.playerActions = {};
+
+        this.gamePlayers.forEach(playerName => {
+            const form = this.playerActionsContainer.querySelector(`[data-player="${playerName}"]`);
+            if (!form) return;
+
+            const actionType = form.querySelector(`input[name="action_${playerName}"]:checked`)?.value || 'hold';
+            let action = {
+                type: actionType,
+                count: 0,
+                price: 0,
+                limitPrice: 0
+            };
+
+            switch (actionType) {
+                case 'market_buy':
+                    action.count = parseInt(form.querySelector(`input[name="count_${playerName}"]`).value) || 0;
+                    action.price = this.currentScenario.startPrice;
+                    break;
+                case 'market_sell':
+                    action.count = parseInt(form.querySelector(`input[name="count_sell_${playerName}"]`).value) || 0;
+                    action.price = this.currentScenario.startPrice;
+                    break;
+                case 'limit_buy':
+                    action.count = parseInt(form.querySelector(`input[name="count_limit_buy_${playerName}"]`).value) || 0;
+                    action.limitPrice = parseInt(form.querySelector(`input[name="limit_price_buy_${playerName}"]`).value) || this.currentScenario.startPrice;
+                    break;
+                case 'limit_sell':
+                    action.count = parseInt(form.querySelector(`input[name="count_limit_sell_${playerName}"]`).value) || 0;
+                    action.limitPrice = parseInt(form.querySelector(`input[name="limit_price_sell_${playerName}"]`).value) || this.currentScenario.startPrice;
+                    break;
+                case 'hold':
+                default:
+                    break;
+            }
+
+            this.playerActions[playerName] = action;
+        });
+    },
+
+    animateToEndImage() {
+        if (!this.scenarioInfo) return;
+
+        // Меняем изображение на конечное с анимацией
+        const imgElement = this.scenarioInfo.querySelector('img');
+        if (imgElement) {
+            imgElement.style.transition = 'opacity 0.5s ease';
+            imgElement.style.opacity = '0';
+
+            setTimeout(() => {
+                imgElement.src = this.currentScenario.endImage;
+                imgElement.style.opacity = '1';
+            }, 250);
+        }
+    },
+
+    calculateResults() {
+        let resultsHTML = `<h3>📊 Результаты раунда ${this.currentRound + 1}</h3>`;
+        resultsHTML += `<p><strong>Цена открытия:</strong> ${this.formatMoney(this.currentScenario.startPrice)}</p>`;
+        resultsHTML += `<p><strong>Цена закрытия:</strong> ${this.formatMoney(this.currentScenario.endPrice)}</p>`;
+        resultsHTML += `<p><strong>Реакция рынка:</strong> ${this.currentScenario.reaction}</p>`;
+        resultsHTML += '<div class="results-grid">';
+
+        this.gamePlayers.forEach(playerName => {
+            const action = this.playerActions[playerName];
+            if (!action) return;
+
+            const balance = this.getPlayerBalance(playerName);
+
+            // Если банкрот - не пересчитываем
+            if (balance <= 0) {
+                resultsHTML += `
+          <div class="result-item">
+            <h4>${playerName}</h4>
+            <p style="color: #f44336;">💔 БАНКРОТ</p>
+            <p>Невозможно совершить сделку</p>
+          </div>
+        `;
+                return;
+            }
+
+            let pnl = 0;
+            let resultText = 'Позиция не изменилась';
+
+            if (action.type === 'hold') {
+                pnl = 0;
+                resultText = 'Вы ничего не делали';
+            } else if (action.type === 'market_buy') {
+                pnl = (this.currentScenario.endPrice - this.currentScenario.startPrice) * action.count;
+                resultText = `Куплено ${action.count} по ${this.formatMoney(this.currentScenario.startPrice)}, продано по ${this.formatMoney(this.currentScenario.endPrice)}`;
+            } else if (action.type === 'market_sell') {
+                pnl = (this.currentScenario.startPrice - this.currentScenario.endPrice) * action.count;
+                resultText = `Шорт: продано ${action.count} по ${this.formatMoney(this.currentScenario.startPrice)}, закрыто по ${this.formatMoney(this.currentScenario.endPrice)}`;
+            } else if (action.type === 'limit_buy') {
+                if (action.limitPrice >= this.currentScenario.minPrice) {
+                    pnl = (this.currentScenario.endPrice - action.limitPrice) * action.count;
+                    resultText = `Лимит КУПИТЬ ✅ исполнился по ${this.formatMoney(action.limitPrice)}, продано по ${this.formatMoney(this.currentScenario.endPrice)}`;
+                } else {
+                    resultText = `Лимит КУПИТЬ ❌ по ${this.formatMoney(action.limitPrice)} - не исполнился (минимум был ${this.formatMoney(this.currentScenario.minPrice)})`;
+                }
+            } else if (action.type === 'limit_sell') {
+                if (action.limitPrice <= this.currentScenario.maxPrice) {
+                    pnl = (action.limitPrice - this.currentScenario.endPrice) * action.count;
+                    resultText = `Лимит ПРОДАТЬ✅ исполнился по ${this.formatMoney(action.limitPrice)}, закрыто по ${this.formatMoney(this.currentScenario.endPrice)}`;
+                } else {
+                    resultText = `Лимит ПРОДАТЬ❌ по ${this.formatMoney(action.limitPrice)} - не исполнился (максимум был ${this.formatMoney(this.currentScenario.maxPrice)})`;
+                }
+            }
+
+            const oldBalance = balance;
+            const newBalance = Math.max(0, oldBalance + pnl);
+            this.setPlayerBalance(playerName, newBalance);
+
+            const pnlClass = pnl > 0 ? 'positive' : (pnl < 0 ? 'negative' : 'neutral');
+            resultsHTML += `
+        <div class="result-item">
+          <h4>${playerName}</h4>
+          <p>${resultText}</p>
+          <p class="${pnlClass}">P&L: ${pnl > 0 ? '+' : ''}${this.formatMoney(pnl)} ₽</p>
+          <p>Баланс: ${this.formatMoney(oldBalance)} → ${this.formatMoney(newBalance)} ₽</p>
+        </div>
+      `;
+        });
+
+        resultsHTML += '</div>';
+
+        if (this.scenarioInfo) {
+            this.scenarioInfo.innerHTML = resultsHTML;
+        }
+
+        this.currentRound++;
+    },
+
+    nextScenario() {
+        if (this.currentRound >= this.totalRounds) {
+            this.showFinalResults();
+            return;
+        }
+
+        this.renderScenario();
+    },
+
+    // === ФИНАЛЬНЫЕ РЕЗУЛЬТАТЫ ===
+    showFinalResults() {
+        const results = [];
+
+        this.gamePlayers.forEach(playerName => {
+            const finalBalance = this.getPlayerBalance(playerName);
+            const profitPercent = ((finalBalance - 100000) / 100000) * 100;
+            const score = Math.max(0, 500 + Math.round((profitPercent * 20)));
+
+            results.push({
+                name: playerName,
+                balance: finalBalance,
+                profit: finalBalance - 100000,
+                profitPercent: profitPercent,
+                score: score
+            });
+        });
+
+        results.sort((a, b) => b.score - a.score);
+
+        let resultsHTML = '<h2>🏆 Финальные результаты</h2>';
+        resultsHTML += '<div class="final-results-grid">';
+
+        results.forEach((result, idx) => {
+            const medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : ''));
+            const resultClass = result.score > 500 ? 'win' : (result.score < 500 ? 'loss' : 'neutral');
+
+            resultsHTML += `
+        <div class="final-result-item ${resultClass}">
+          <h3>${medal} ${result.name}</h3>
+          <p>Финальный баланс: <strong>${this.formatMoney(result.balance)} ₽</strong></p>
+          <p>Прибыль: <span class="${result.profit > 0 ? 'positive' : 'negative'}">
+            ${result.profit > 0 ? '+' : ''}${this.formatMoney(result.profit)} ₽ (${result.profitPercent > 0 ? '+' : ''}${result.profitPercent.toFixed(1)}%)
+          </span></p>
+          <p>Итоговые баллы: <strong>${result.score}</strong></p>
+        </div>
+      `;
+        });
+
+        resultsHTML += '</div>';
+        resultsHTML += '<div class="final-buttons">';
+        resultsHTML += '<button id="clear-level2-data" class="btn btn-danger">Очистить данные уровня</button>';
+        resultsHTML += '<button id="return-to-menu" class="btn btn-primary">На главную</button>';
+        resultsHTML += '</div>';
+
+        if (this.finalResultsModal) {
+            this.finalResultsModal.innerHTML = resultsHTML;
+            this.finalResultsModal.style.display = 'flex';
+
+            document.getElementById('clear-level2-data').addEventListener('click', () => {
+                this.clearLevel2Data();
+            });
+
+            document.getElementById('return-to-menu').addEventListener('click', () => {
+                window.location.href = '../index.html';
+            });
+        }
+
+        results.forEach(result => {
+            const player = Players.list.find(p => p.name === result.name);
+            if (player) {
+                player.score = (player.score || 0) + result.score;
+                Storage.save('players', Players.list);
+            }
+        });
+    },
+
+
+    saveProgressAndReturn() {
+        const sessionData = {
+            sessionId: this.sessionId,
+            gamePlayers: this.gamePlayers,
+            currentRound: this.currentRound,
+            currentScenarioId: this.currentScenario ? this.currentScenario.id : null,
+            usedScenarios: this.usedScenarios,
+            playerBalances: {}
+        };
+
+        this.gamePlayers.forEach(player => {
+            sessionData.playerBalances[player] = this.getPlayerBalance(player);
+        });
+
+        Storage.save('level2_session', sessionData);
+
+        console.log('💾 Сессия сохранена:');
+        console.log('- Игроки:', this.gamePlayers);
+        console.log('- Раунд:', this.currentRound + 1);
+        console.log('- Балансы:', sessionData.playerBalances);
+
+        window.location.href = '../index.html';
+    },
+
+    clearLevel2Data() {
+        const keysToDelete = [];
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('level2_')) {
+                keysToDelete.push(key);
+            }
+        });
+        keysToDelete.forEach(key => localStorage.removeItem(key));
+
+        alert('Все данные уровня очищены!');
+        window.location.href = '../index.html';
+    },
+
+    // === УТИЛИТЫ ===
+    getPlayerBalance(playerName) {
+        return Storage.load(`level2_balance_${playerName}`) || 100000;
+    },
+
+    setPlayerBalance(playerName, amount) {
+        Storage.save(`level2_balance_${playerName}`, Math.max(0, amount));
+    },
+
+    formatMoney(amount) {
+        return new Intl.NumberFormat('ru-RU').format(Math.round(amount));
     }
-    // save and render next
-    localStorage.setItem(this.keyPrefix + this.pool.id, JSON.stringify(this.pool));
-    // clear any previous action-result cards
-    const nextCards = Array.from(document.querySelectorAll('.card'));
-    // avoid removing main cards, just re-render
-    this.renderScenario();
-    this.btnNext.disabled = true;
-  },
-
-  showFinal() {
-    // build summary table
-    this.finalSummary.classList.remove('hidden');
-    this.noSummary.classList.add('hidden');
-    this.summaryTable.innerHTML = '<tr><th>Игрок</th><th>Итоговый баланс</th><th>Прибыль</th><th>Очки</th></tr>';
-    this.pool.players.forEach(p => {
-      const profit = Number((p.balance - (p.initialBalance || 100000)).toFixed(2));
-      const profitPercent = ((profit) / (p.initialBalance || 100000)) * 100;
-      const points = Math.round(500 + profitPercent * 20);
-      // save to Players score
-      const pl = Players.list.find(x => x.name === p.name);
-      if (pl) pl.score = (pl.score || 0) + points;
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${p.name}</td><td>${Number(p.balance).toLocaleString('ru-RU')} ₽</td><td>${profit >=0 ? '+' : ''}${profit.toFixed(2)} ₽ (${profitPercent.toFixed(2)}%)</td><td>${points}</td>`;
-      this.summaryTable.appendChild(tr);
-    });
-    // persist players
-    Storage.save('players', Players.list);
-    // persist pool final state and remove "last"
-    localStorage.setItem(this.keyPrefix + this.pool.id, JSON.stringify(this.pool));
-    localStorage.removeItem(this.keyPrefix + 'last');
-  },
-
-  finishAndSave() {
-    // final save and redirect to menu
-    localStorage.setItem(this.keyPrefix + this.pool.id, JSON.stringify(this.pool));
-    localStorage.removeItem(this.keyPrefix + 'last');
-    alert('Результат сохранён. Возврат в меню.');
-    window.location.href = '../index.html';
-  },
-
-  saveAndExit() {
-    if (!this.pool) return;
-    localStorage.setItem(this.keyPrefix + this.pool.id, JSON.stringify(this.pool));
-    localStorage.setItem(this.keyPrefix + 'last', this.pool.id);
-    alert('Пул сохранён. Выход в меню.');
-    window.location.href = '../index.html';
-  },
-
-  openNewPoolModal() {
-    // clear players selection and show modal
-    this.startModal.classList.remove('hidden');
-  },
-
-  handleCancelStart() {
-    this.startModal.classList.add('hidden');
-  }
 };
 
-document.addEventListener('DOMContentLoaded', () => Level2.init());
+// === ИНИЦИАЛИЗАЦИЯ ===
+Level2.init();

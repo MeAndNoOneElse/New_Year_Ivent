@@ -1,123 +1,432 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Уровень 1 — Поиск предметов</title>
-  <link rel="stylesheet" href="../css/main.css">
-  <style>
-    /* Минимальные стили для уровня */
-    body { font-family: sans-serif; background: linear-gradient(#eef6ff, #fff); color:#222; padding:20px; }
-    .game-wrap { max-width:1000px; margin:0 auto; }
-    .hud { display:flex; gap:16px; justify-content:space-between; align-items:center; margin-bottom:12px; }
-    .scene-wrap { position:relative; width:720px; height:480px; border-radius:12px; overflow:hidden; background-size:cover; background-position:center; border:4px solid #9cc1d9; }
-    .hotspot { position:absolute; width:80px; height:80px; border-radius:8px; cursor:pointer; transition: transform 0.18s, box-shadow 0.18s, opacity 0.18s; }
-    .hotspot.hovered { transform: scale(1.06); box-shadow: 0 6px 18px rgba(0,0,0,0.25); opacity:1; }
-    .hotspot.revealed::after { content: attr(data-icon); position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:28px; pointer-events:none; }
-    .inventory { display:flex; gap:8px; margin-top:12px; align-items:center; }
-    .slot { width:88px; height:88px; border:2px dashed #b8d7e6; border-radius:8px; display:flex; align-items:center; justify-content:center; background:#fff; cursor:pointer; transition: transform 0.25s; position:relative; }
-    .slot.selected { outline:3px solid #ffd36b; transform:scale(1.03); }
-    .slot.correct { box-shadow:0 0 0 3px rgba(100,255,100,0.18) inset; }
-    .slot.wrong { animation: shake 0.45s; }
-    @keyframes shake { 0%{transform:translateX(0)} 20%{transform:translateX(-6px)} 60%{transform:translateX(6px)} 100%{transform:translateX(0)} }
-    .hint-panel { position: fixed; right: 20px; top: 100px; width:320px; background:#fff; border-radius:10px; padding:12px; box-shadow:0 8px 24px rgba(0,0,0,0.25); display:none; z-index:50; }
-    .code-modal { position:fixed; left:0; top:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.45); }
-    .code-card { background:#fff; padding:20px; border-radius:10px; width:420px; text-align:center; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Уровень 1 — Поиск предметов</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <style>
+        /* Минимальные стили для уровня */
+        body {
+            font-family: sans-serif;
+            background: linear-gradient(#eef6ff, #fff);
+            color: #222;
+            padding: 20px;
+        }
 
-    .item-highlight {
-      z-index: 60 !important;
-      transform: scale(1.14) !important;
-      box-shadow: 0 18px 44px rgba(255,240,120,0.6) !important;
-      opacity: 1 !important;
-      pointer-events: auto !important;
-    }
+        .game-wrap {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
 
-  </style>
+        .hud {
+            display: flex;
+            gap: 16px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .scene-wrap {
+            position: relative;
+            width: 720px;
+            height: 480px;
+            border-radius: 12px;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+            border: 4px solid #9cc1d9;
+        }
+
+        .hotspot {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.18s, box-shadow 0.18s, opacity 0.18s;
+        }
+
+        .hotspot.hovered {
+            transform: scale(1.06);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+            opacity: 1;
+        }
+
+        .hotspot.revealed::after {
+            content: attr(data-icon);
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 28px;
+            pointer-events: none;
+        }
+
+        .inventory {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            align-items: center;
+        }
+
+        .slot {
+            width: 88px;
+            height: 88px;
+            border: 2px dashed #b8d7e6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            cursor: pointer;
+            transition: transform 0.25s;
+            position: relative;
+        }
+
+        .slot.selected {
+            outline: 3px solid #ffd36b;
+            transform: scale(1.03);
+        }
+
+        .slot.correct {
+            box-shadow: 0 0 0 3px rgba(100, 255, 100, 0.18) inset;
+        }
+
+        .slot.wrong {
+            animation: shake 0.45s;
+        }
+
+        @keyframes shake {
+            0% {
+                transform: translateX(0)
+            }
+            20% {
+                transform: translateX(-6px)
+            }
+            60% {
+                transform: translateX(6px)
+            }
+            100% {
+                transform: translateX(0)
+            }
+        }
+
+        .hint-panel {
+
+            width: 320px;
+            background: #fff;
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            display: none;
+            z-index: 50;
+        }
+
+        .code-modal {
+            position: fixed;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.45);
+        }
+
+        .code-card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            width: 420px;
+            text-align: center;
+        }
+
+        .item-highlight {
+            z-index: 60 !important;
+            transform: scale(1.14) !important;
+            box-shadow: 0 18px 44px rgba(255, 240, 120, 0.6) !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h3 {
+            color: #667eea;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .modal-content p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #333;
+        }
+
+        .modal-content ol, .modal-content ul {
+            color: #666;
+            margin-left: 20px;
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        .rules-button {
+            width: 45px;
+            height: 45px;
+            font-size: 1.2em;
+            top: 15px;
+            right: 15px;
+        }
+
+        .rules-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .rules-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+    </style>
 
 </head>
 <body>
+<!-- ПОСТОЯННАЯ КНОПКА ПРАВИЛ -->
+<button class="rules-button" id="rules-btn1" title="Показать правила">
+    📋
+</button>
+<!-- МОДАЛ ПРАВИЛ -->
+<div id="rules-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>📖 Правила игры</h2>
+        </div>
 
-  <div style="max-width:1100px;margin:0 auto;padding:20px;">
+        <h3>🎯 Цель игры</h3>
+        <p>Найти 7 предметов на картинке, расставить их в нужном порядке в инвентаре и получить код для открытия
+            след.уровня</p>
+
+        <h3>😨 Что происходит?</h3>
+        <ol>
+            <li>Перед вами статическая картинка, на ней спрятаны 7 предметов (артефактов) и их не видно сразу
+            </li>
+            <li>Вы можете навести мышку на определённую область, которая подсвечивается при наведении(но это не всегда
+                видно)
+            </li>
+            <li>Вы можете кликать на картинку, чтобы понять, есть ли в этой области предмет или нет</li>
+            <li>Затем вам надо собрать предмет. Существует несколько видов взаимодействия(ниже)</li>
+            <li>Когда собраны все предметы, то нужно менять их местами, чтобы получить правильную последовательность.
+            </li>
+            <li>Полученный код надо скопировать и вставить в поле следующего уровня</code></li>
+
+        </ol>
+
+        <h3>📋 Виды взаимодействия</h3>
+        <ol>
+            <li>
+                Простой клик
+            </li>
+            <li>
+                Двойной клик
+            </li>
+            <li>
+                Долгое нажатие (удержание)
+            </li>
+            <li>
+                Многократные клики (около 12)
+            </li>
+            <li>
+                Движение мышкой (зажать левую кнопку и водить вверх-вниз)
+                Движение, как буд-то ставите галочку
+            </li>
+        </ol>
+
+        <h3>⚠️ Важные моменты</h3>
+        <ul>
+            <li>Есть 9 подсказок, по 1 на каждую область. Логика в них странная, но они должны помочь.</li>
+            <li>При наведении на область меняется курсор</li>
+            <li>Я не знаю, как это объяснить, но некоторые области надо "прочёсывать" мышкой, как будто вы что-то
+                стираете или рисуете. Просто водите мышкой туда-сюда, пока не появится реакция.
+            </li>
+
+        </ul>
+        <h3>Желаю успехов</h3>
+
+    </div>
+</div>
+
+<div style="max-width:1100px;margin:0 auto;padding:20px;">
     <header style="display:flex;align-items:center;gap:12px;">
-      <a href="../index.html" id="back-btn">← Назад</a>
-      <h1>🎁 Поиск предметов — Уровень 1</h1>
+        <a href="../index.html" id="back-btn">← Назад</a>
+        <h1>🎁 Поиск предметов — Уровень 1</h1>
     </header>
 
     <div style="display:flex;gap:18px;margin-top:12px;">
-      <div>
-        <div class="scene-wrap" id="scene" aria-label="Сцена уровня">
-          <!-- overlay для режима "мамино зрение" -->
-          <div id="vision-overlay" class="vision-overlay" aria-hidden="true"></div>
-        </div>
-        <p style="margin-top:8px; font-size:0.9rem; opacity:0.85;">Используйте наведение, клик, долгое удержание и двойные клики. После сбора всех предметов расставьте их в инвентаре.</p>
+        <div>
+            <div class="scene-wrap" id="scene" aria-label="Сцена уровня">
+                <!-- overlay для режима "мамино зрение" -->
+                <div id="vision-overlay" class="vision-overlay" aria-hidden="true"></div>
+            </div>
+            <p style="margin-top:8px; font-size:0.9rem; opacity:0.85;">Используйте наведение, клик, долгое удержание и
+                двойные клики. После сбора всех предметов расставьте их в инвентаре.</p>
 
-        <!-- ИНВЕНТАРЬ: перенёс под картинку -->
-        <h3 style="margin-top:12px; text-align:center;">Инвентарь</h3>
-        <div class="inventory" id="inventory" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px;"></div>
-        <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;">
-          <button id="check-order" style="padding:8px 12px;background:#2f6b9b;color:#fff;border-radius:6px;border:none;">Проверить порядок</button>
-        </div>
-      </div>
-
-      <div style="flex:1;">
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
-          <strong>Игрок:</strong> <span id="current-player" style="margin-left:8px;">—</span>
-          <button id="open-modal" style="margin-left:auto;padding:8px 10px;">Инструкция</button>
-          <button id="hint-toggle" title="Подсказки" style="margin-left:8px;padding:8px 10px;">?</button>
+            <!-- ИНВЕНТАРЬ: перенёс под картинку -->
+            <h3 style="margin-top:12px; text-align:center;">Инвентарь</h3>
+            <div class="inventory" id="inventory"
+                 style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px;"></div>
+            <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;">
+                <button id="check-order"
+                        style="padding:8px 12px;background:#2f6b9b;color:#fff;border-radius:6px;border:none;">Проверить
+                    порядок
+                </button>
+            </div>
         </div>
 
-        <!-- Таймер и счётчик кликов -->
-        <div style="display:flex;gap:16px;align-items:center;margin-bottom:8px;">
-          <div>Время: <strong id="timer">00:00</strong></div>
-          <div>Кликов: <strong id="click-count">0</strong></div>
-        </div>
+        <div style="flex:1;">
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+                <strong>Игрок:</strong> <span id="current-player" style="margin-left:8px;">—</span>
+                <button id="hint-toggle" title="Подсказки" style="margin-left:8px;padding:8px 10px;">Подсказки</button>
+            </div>
 
-        <div class="hint-panel" id="hint-panel">
-          <h4>Подсказки</h4>
-          <div id="hint-text" style="min-height:56px;opacity:0.95"></div>
-          <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
-            <button id="hint-next" style="padding:6px 10px;">Следующая</button>
-          </div>
+
+            <div class="hint-panel" id="hint-panel">
+                <h4>Подсказки</h4>
+                <div id="hint-text" style="min-height:56px;opacity:0.95"></div>
+                <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
+                    <button id="hint-next" style="padding:6px 10px;">Следующая</button>
+                </div>
+            </div>
+            <div id="puzzle-info" style="margin-top:40px; font-size:0.95rem; opacity:0.9;"></div>
         </div>
-        <div id="puzzle-info" style="margin-top:12px; font-size:0.95rem; opacity:0.9;"></div>
-      </div>
     </div>
-  </div>
+</div>
 
-  <!-- Стартовый модал: дисклеймер + выбор игрока кнопками -->
-  <div id="start-modal" class="code-modal" style="display:none;">
+<!-- Стартовый модал: дисклеймер + выбор игрока кнопками -->
+<div id="start-modal" class="code-modal" style="display:none;">
     <div class="code-card">
-      <h2>Новогодняя карта-сокровищница</h2>
-      <p>Найдите 7 артефактов, используя наведение, клики, долгие нажатия и двойные клики. Потом расставьте их в инвентаре, чтобы получить код.</p>
-      <div style="margin:12px 0;">
-        <div id="player-list-buttons" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;">
-          <!-- кнопки игроков будут сгенерированы из localStorage через Players.list -->
-          <!-- если Players.list пуст — будет подсказка -->
+        <h2>Новогодняя карта-сокровищница</h2>
+        <p>Найдите 7 артефактов, используя наведение, клики, долгие нажатия и двойные клики. Потом расставьте их в
+            инвентаре, чтобы получить код.</p>
+        <div style="margin:12px 0;">
+            <div id="player-list-buttons" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;">
+                <!-- кнопки игроков будут сгенерированы из localStorage через Players.list -->
+                <!-- если Players.list пуст — будет подсказка -->
+            </div>
         </div>
-      </div>
 
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
-        <button id="start-play" style="padding:8px 12px;background:#2f6b9b;color:#fff;border-radius:6px;border:none;">Играть</button>
-        <button id="close-start" style="padding:8px 12px;background:#ccc;border-radius:6px;border:none;">Отмена</button>
-      </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+            <button id="start-play"
+                    style="padding:8px 12px;background:#2f6b9b;color:#fff;border-radius:6px;border:none;">Играть
+            </button>
+            <button id="close-start" style="padding:8px 12px;background:#ccc;border-radius:6px;border:none;">Отмена
+            </button>
+        </div>
     </div>
-  </div>
+</div>
 
-  <!-- Модал с кодом -->
-  <div id="final-modal" class="code-modal" style="display:none;">
+<!-- Модал с кодом -->
+<div id="final-modal" class="code-modal" style="display:none;">
     <div class="code-card">
-      <h3>Ключ</h3>
-      <p id="final-text" style="font-weight:bold;font-size:1.2rem;"></p>
-      <p id="final-points" style="font-size:1rem; margin-top:8px; opacity:0.95;"></p>
-      <p style="opacity:0.9;">Запомните этот код и введите его на главной странице, чтобы открыть следующий уровень.</p>
-      <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
-        <button id="to-menu" style="padding:8px 12px;background:#8b1f2d;color:#fff;border-radius:6px;border:none;">Вернуться в меню</button>
-      </div>
+        <h3>Ключ</h3>
+        <p id="final-text" style="font-weight:bold;font-size:1.2rem;"></p>
+        <p id="final-points" style="font-size:1rem; margin-top:8px; opacity:0.95;"></p>
+        <p style="opacity:0.9;">Запомните этот код и введите его на главной странице, чтобы открыть следующий
+            уровень.</p>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
+            <button id="to-menu" style="padding:8px 12px;background:#8b1f2d;color:#fff;border-radius:6px;border:none;">
+                Вернуться в меню
+            </button>
+        </div>
     </div>
-  </div>
+</div>
 
-  <script src="../js/core/storage.js"></script>
-  <script src="../js/core/players.js"></script>
-  <script src="../js/levels/level1-treasure.js"></script>
+<script src="../js/core/storage.js"></script>
+<script src="../js/core/players.js"></script>
+<script src="../js/levels/level1-treasure.js"></script>
+<script>
+    // === УПРАВЛЕНИЕ МОДАЛОМ ПРАВИЛ ===
+    const openRulesBtn = document.getElementById('rules-btn1');
+    const rulesModal = document.getElementById('rules-modal');
+    const hintPanel = document.getElementById('hint-panel');
+
+    if (openRulesBtn && rulesModal) {
+        openRulesBtn.addEventListener('click', () => {
+            rulesModal.style.display = 'flex'; // или 'block' — как у остальных модалок
+        });
+    }
+    // Закрытие по клику на фон
+    if (rulesModal) {
+        rulesModal.addEventListener('click', (e) => {
+            if (e.target === rulesModal) {
+                rulesModal.style.display = 'none';
+            }
+        });
+    }
+    if (hintPanel) {
+        rulesModal.addEventListener('click', (e) => {
+            if (e.target === rulesModal) {
+                rulesModal.style.display = 'none';
+            }
+        });
+    }
+
+
+</script>
 </body>
 </html>

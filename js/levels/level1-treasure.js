@@ -134,12 +134,12 @@ const Level1 = {
               'Одну из свечей можно взять себе',
               'Перчатки не найти без маминой помощи',
               'Дети оставили конфету на ковре у камина',
-              '- Уже скоро новый год? ' +
-              '- Посмотри на часах!' +
-              '- А где?' +
-              '- На самом видном месте!',
+              '- Уже скоро новый год? \n' +
+              '- Посмотри на часах! \n' +
+              '- А где? \n' +
+              '- На самом видном месте! \n',
               'Если не терпится уже открыть подарки, то не сдерживай себя',
-              '- Справа на камине можно было бы повесить носки. (показывает)',
+              '- Справа на камине можно было бы повесить носки.\n (показывает)',
               'Огонь в камине не только согревает, но и светит хорошо',
               'Мама может увидеть спрятанные вещи, если попросить её помочь. Она на улице, но можно позвать из окна ',
               'Ты уже написал письмо Деду Морозу? Конверт сможешь взять на столике. (чтобы найти его нужен свет)'
@@ -239,6 +239,7 @@ const Level1 = {
               this.showSmartHint(); // ← ДОБАВИТЬ
           });
       }
+
       if (this.hintNext) {
           this.hintNext.addEventListener('click', () => this.nextHint && this.nextHint());}
     if (this.hintReset) this.hintReset.addEventListener('click', () => this.resetHints && this.resetHints());
@@ -1383,8 +1384,8 @@ _protection: (function() {
           <p style="font-size: 28px; margin-bottom: 15px;">Хм. Похоже кто-то полез в средства разработчика. Ай-ай-ай</p>
           <p style="font-size: 20px; margin-bottom: 30px; color: #ff9999;">
             Пожалуйста, не пытайтесь изменять исходный код игры.<br>
-            Это нарушает правила и может привести к сбоям.<br> <br>
-            Я понимаю, что это сообщение тебя не остановит, но я попробую
+            <br> <br>
+            Я знаю, что нельзя защитить js, но надеюсь, что это сообщение тебя остановит
           </p>
           <p style="font-size: 18px; color: #cccccc;">
             Страница закроется через 5 секунд...
@@ -1402,44 +1403,68 @@ _protection: (function() {
         document.body.style.pointerEvents = 'none';
     }
 
-    // 3. Проверка изменений DOM каждые 3 секунды
+
+    // 4. Проверка изменений DOM каждые 3 секунды
     function startProtection() {
         // Запоминаем текущее состояние
         originalHTML = document.documentElement.outerHTML;
 
-        // Проверяем каждые 3 секунды
-        // setInterval(() => {
-        //     try {
-        //         if (document.documentElement.outerHTML !== originalHTML) {
-        //             console.error('Обнаружены изменения DOM!');
-        //             showWarningAndClose();
-        //         }
-        //     } catch (e) {
-        //         // В случае ошибки тоже показываем предупреждение
-        //         showWarningAndClose();
-        //     }
-        // }, 5000);
+        // Проверяем при загрузке, не открыты ли уже DevTools
+        setTimeout(() => {
+            if (detectDevTools()) {
+                showWarningAndClose();
+            }
+        }, 1000);
+
+        // Периодическая проверка DevTools
+        setInterval(() => {
+            if (detectDevTools()) {
+                showWarningAndClose();
+            }
+        }, 2000);
+
+        // Проверка изменений DOM
 
 
-
-
-        // // Периодически запускаем проверку
-        // setInterval(debugCheck, 5000);
-
-
-
+        // Блокировка горячих клавиш
         document.addEventListener('keydown', (e) => {
-            // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+            // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+Shift+C
             if (
                 e.key === 'F12' ||
                 (e.ctrlKey && e.shiftKey && e.key === 'I') ||
                 (e.ctrlKey && e.shiftKey && e.key === 'J') ||
+                (e.ctrlKey && e.shiftKey && e.key === 'C') ||
                 (e.ctrlKey && e.key === 'U')
             ) {
                 e.preventDefault();
                 showWarningAndClose();
             }
         });
+
+        // Блокировка контекстного меню
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            showWarningAndClose();
+            return false;
+        });
+
+        // Блокировка инспектирования элементов через DevTools
+        document.addEventListener('mousedown', (e) => {
+            if (e.ctrlKey || e.metaKey) { // Ctrl+клик или Cmd+клик
+                e.preventDefault();
+                showWarningAndClose();
+            }
+        }, true);
+
+        // Защита от отладки через бесконечный debugger
+        setInterval(() => {
+            const start = Date.now();
+            debugger;
+            const end = Date.now();
+            if (end - start > 1) {
+                showWarningAndClose();
+            }
+        }, 5000);
     }
 
     // Запускаем защиту когда DOM загружен
@@ -1450,4 +1475,4 @@ _protection: (function() {
     }
 
     return { showWarningAndClose };
-})();
+})()
